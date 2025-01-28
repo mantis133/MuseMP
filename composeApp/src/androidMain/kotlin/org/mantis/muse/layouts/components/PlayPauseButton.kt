@@ -1,0 +1,35 @@
+package org.mantis.muse.layouts.components
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.res.painterResource
+import org.mantis.muse.R
+import androidx.compose.foundation.layout.fillMaxSize
+
+/**
+ * some relevant text
+ */
+@Composable
+fun PlayPauseButton(
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    val displayedIcon = if (isPlaying) {
+        R.drawable.pause_button
+    } else {
+        R.drawable.play_arrow
+    }
+    IconButton(onClick = onClick) {
+        Icon(
+            painter = painterResource(id = displayedIcon),
+            contentDescription = "",
+            tint = tint,
+            modifier = Modifier.fillMaxSize(0.9f)
+        )
+    }
+}
