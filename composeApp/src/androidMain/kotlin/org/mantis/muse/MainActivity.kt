@@ -1,7 +1,15 @@
 package org.mantis.muse
 
+import android.Manifest
 import android.content.ComponentName
+import android.content.ContentUris
+import android.content.Context
+import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorManager
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,7 +22,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.getSystemService
 import androidx.lifecycle.MutableLiveData
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -54,6 +64,22 @@ class MainActivity : ComponentActivity() {
 //        )
 //        window.statusBarColor = ContextCompat.getColor(this, androidx.media3.session.R.color.primary_text_default_material_dark)
 
+        val permissions = if (Build.VERSION.SDK_INT >= 33)
+            arrayOf(
+                Manifest.permission.READ_MEDIA_AUDIO,
+                Manifest.permission.READ_MEDIA_IMAGES
+            )
+        else arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        ActivityCompat.requestPermissions(
+            this,
+            permissions,
+            0
+        )
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED){
+            println("yippee")
+        } else {
+            println("ARGG!!")
+        }
         val db = Room.databaseBuilder(
             this,
             MusicCacheDB::class.java, "MusicCache"
@@ -99,6 +125,41 @@ class MainActivity : ComponentActivity() {
 //            }
 //        }
 //        println("playlists: $filePaths")
+
+        val queryUri = if(Build.VERSION.SDK_INT >= 29){
+            MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        } else {
+            MediaStore.Files.getContentUri("external")
+        }
+
+        val projection = arrayOf(
+            MediaStore.Files.FileColumns._ID,
+            MediaStore.Files.FileColumns.DISPLAY_NAME,
+            MediaStore.Files.FileColumns.MIME_TYPE,
+
+        )
+
+        this.contentResolver.query(
+            queryUri,
+            projection,
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
+            val mimeTypeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
+            println(cursor.count)
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val name = cursor.getString(nameColumn)
+                val mimeType = cursor.getString(mimeTypeColumn)
+
+                val contentUri = ContentUris.withAppendedId(queryUri, id)
+
+//                println("File: $name, of mimeType: $mimeType, at location: $contentUri")
+            }
+        }
 
         CoroutineScope(Dispatchers.IO).launch {
 //            viewModel.newPlaylist(Playlist("fake","super cool and fake playlist",listOf()))
