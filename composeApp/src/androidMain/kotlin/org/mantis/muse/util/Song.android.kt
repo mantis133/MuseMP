@@ -34,6 +34,16 @@ fun Song.toMediaItem(): MediaItem {
     return MediaItem.fromUri(this.filePath)
 }
 
+fun fromFilePath(filepath: String): Song{
+    val file = File(filepath)
+    val mmr = MediaMetadataRetriever()
+    mmr.setDataSource(file.path)
+    val artists = when (val a = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)){
+        null -> "Unknown"
+        else -> a
+    }
+    return Song(file.nameWithoutExtension, artists, 0f, filepath)
+}
 
 //fun getAlbumCover() : Bitmap?{
 //    val file = File(this.path)

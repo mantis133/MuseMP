@@ -1,18 +1,38 @@
 package org.mantis.muse.util
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.drawable.Drawable
-import org.mantis.muse.R
+import java.io.File
+import java.net.URI
 
 class Playlist(val filePath: String, val name: String, val songList: List<Song>) {
-    val coverArt: Bitmap? // PREVENTS COMMON MAIN
-        get() {
-            return null
-        }
+    companion object{}
+
+
     val size: Int
         get() {
             return songList.size
         }
+}
 
+val Playlist.coverArt: Bitmap? // PREVENTS COMMON MAIN
+    get() {
+        return null
+    }
+
+fun Playlist.Companion.fromURI(fileURI: URI): Playlist{
+    val playlistFile: File = File(fileURI)
+    val songs = mutableListOf<Song>()
+
+    playlistFile.readLines().forEach { line ->
+        when {
+            line.startsWith("#") -> {}
+            else -> {songs.add(fromFilePath(playlistFile.parent?.plus("/$line")?:line))}
+        }
+    }
+
+    return Playlist(
+        filePath = playlistFile.absolutePath,
+        name = playlistFile.nameWithoutExtension,
+        songList = songs
+    )
 }

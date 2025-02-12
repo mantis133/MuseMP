@@ -1,14 +1,14 @@
 package org.mantis.muse.services
 
+import android.content.BroadcastReceiver
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaSession.ControllerInfo
 import androidx.media3.session.MediaSessionService
-import org.mantis.muse.R
 
 class PlaybackService : MediaSessionService() {
 
@@ -20,6 +20,28 @@ class PlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
+
+        val intentReceiver = object: BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action){
+                    Intent.ACTION_HEADSET_PLUG -> {
+//                        when(intent.getIntExtra("state",-1)){
+//                            0 -> {/*headphones unplugged*/
+//                                session?.player?.pause()
+//                            }
+//                            1 -> {/*headphones plugged in*/
+//
+//                            }
+//                            else ->{/*who the hell knows*/
+////                                Log.d(TAG, "change?")
+//                            }
+//                        }
+                        session?.player?.pause()
+                        println("HEADPHONE ACTION")
+                    }
+                }
+            }
+        }
 
 //        val likeButton = CommandButton.Builder()
 //            .setDisplayName("Like")
@@ -39,6 +61,13 @@ class PlaybackService : MediaSessionService() {
         session = MediaSession.Builder(this, player)
 
             .build()
+
+        registerReceiver(
+            intentReceiver,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_HEADSET_PLUG)
+            }
+        )
     }
 
     override fun startForegroundService(service: Intent?): ComponentName? {

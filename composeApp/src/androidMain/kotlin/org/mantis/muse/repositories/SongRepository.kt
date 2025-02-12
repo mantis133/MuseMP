@@ -3,14 +3,16 @@ package org.mantis.muse.repositories
 import android.content.Context
 import android.provider.MediaStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
+import org.mantis.muse.storage.LocalFileSource
 import org.mantis.muse.storage.dao.SongDao
-import org.mantis.muse.util.Playlist
+import org.mantis.muse.storage.entity.SongEntity
 import org.mantis.muse.util.Song
 
 class SongRepository(
-    private val songDao: SongDao
+    private val songDao: SongDao,
+    private val localFileSource: LocalFileSource
 ) {
 //    fun getAllFromDatabase(): Flow<List<Song>> = songDao.getAll().map { songEntities ->
 //        songEntities.map { songEntity ->
@@ -21,6 +23,12 @@ class SongRepository(
 //            )
 //        }
 //    }
+
+    suspend fun updateSongCache(){
+        localFileSource.localMp3Files.collectLatest { song ->
+            songDao.insertSongs(SongEntity(0, song.name, "ARTISTS"))
+        }
+    }
 
     fun getAllFromInternals(context: Context): Flow<List<Song>> {
         val filePaths = mutableListOf<String>()

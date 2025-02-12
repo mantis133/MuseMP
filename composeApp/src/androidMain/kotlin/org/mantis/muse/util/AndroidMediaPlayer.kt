@@ -1,77 +1,149 @@
 package org.mantis.muse.util
 
-import androidx.lifecycle.MutableLiveData
-import androidx.media3.common.MediaItem
+import android.content.Context
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.media3.common.Player
 import androidx.media3.session.MediaController
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.decodeToImageBitmap
+
+sealed interface AndroidMediaPlayerState {
+    data class LoadedSong(
+        val albumArt: ImageBitmap?,
+        val queue: List<Song>,
+        var queuePosition: Int,
+        var playing: Boolean,
+        var shuffling: Boolean,
+        var loopState: LoopState,
+        var trackPositionMS: Long,
+        var trackDurationMS: Long
+    ): AndroidMediaPlayerState
+//    data object NoConnection: AndroidMediaPlayerState
+//    data object Empty: AndroidMediaPlayerState
+}
+
 
 class AndroidMediaPlayer(
-    var mediaConn: MediaController?
-) : MediaPlayer {
-    override var currentSong: Song
-        get() = queue[queuePosition]
-        set(value) {
-            val idx = queue.indexOf(value)
-            if (idx >= 0) queuePosition = idx
+    var mediaConn: MediaController?,
+    val context: Context
+) {
+    private var queue: MutableList<Song> = mutableListOf()
+
+    var loopState: LoopState
+        get() {return when(mediaConn?.repeatMode){
+            Player.REPEAT_MODE_OFF -> LoopState.None
+            Player.REPEAT_MODE_ONE -> LoopState.Single
+            Player.REPEAT_MODE_ALL -> LoopState.Full
+            else -> LoopState.None
+        }}
+        set(state) {
+            mediaConn?.repeatMode = when(state) {
+                LoopState.None -> Player.REPEAT_MODE_OFF
+                LoopState.Single -> Player.REPEAT_MODE_ONE
+                LoopState.Full -> Player.REPEAT_MODE_ALL
+            }
+            syncWithExoPlayer()
         }
 
-    override var queue: List<Song> = listOf()
-    private var queuePosition: Int = 0
-    override var playingState: Boolean = false
-    override var loopState: LoopState = LoopState.None
-    override var shuffleState: Boolean = false
+    var trackPositionMS: Long
+        get() { mediaConn?.let{syncWithExoPlayer()};return mediaConn?.currentPosition?:1L }
+        set(pos) { this.seekPosition(pos)}
 
     private val onChangeCallbacks: MutableList<() -> Unit> = mutableListOf()
 
-    override fun play() {
-        println("player is playing")
-        mediaConn?.play().let {
-            playingState = true
+    @OptIn(ExperimentalResourceApi::class)
+    val playerState: MutableStateFlow<AndroidMediaPlayerState.LoadedSong> = MutableStateFlow(
+        AndroidMediaPlayerState.LoadedSong(
+            albumArt = mediaConn?.currentMediaItem?.mediaMetadata?.artworkData?.decodeToImageBitmap(),
+            queue = mutableListOf(),
+            queuePosition = 0,
+            playing = false,
+            shuffling = false,
+            loopState = LoopState.None,
+            trackPositionMS = 0L,
+            trackDurationMS = 0L
+        )
+    )
+
+    fun play() {
+        if (mediaConn?.isCommandAvailable(Player.COMMAND_PLAY_PAUSE) == true){
+            mediaConn?.play().let {
+                syncWithExoPlayer()
+            }
         }
     }
 
-    override fun pause() {
-        println("player is paused")
-        mediaConn?.pause().let{
-            playingState = false
+    fun pause() {
+        if (mediaConn?.isCommandAvailable(Player.COMMAND_PLAY_PAUSE) == true){
+            mediaConn?.pause().let{
+                syncWithExoPlayer()
+            }
         }
     }
 
-    override fun skipNext() {
-        println("player is skipping to the next song")
-        mediaConn?.seekToNext().let {
-            queuePosition += 1
+    fun skipNext() {
+        mediaConn?.seekToNextMediaItem().let {
+            syncWithExoPlayer()
         }
     }
 
-    override fun skipLast() {
-        TODO("Not yet implemented")
+    fun skipLast() {
+        mediaConn?.seekToPreviousMediaItem().let {
+            syncWithExoPlayer()
+        }
     }
 
-    override fun setShuffle(shuffling: Boolean) {
-        TODO("Not yet implemented")
+    fun skipToIndex(queueIndex: Int) {
+        mediaConn?.seekTo(queueIndex,0).let {
+            syncWithExoPlayer()
+        }
     }
 
-    override fun setLooping(state: LoopState) {
-        TODO("Not yet implemented")
+    fun setShuffle(shuffling: Boolean) {
+        val queueToLoad = if (shuffling) queue.shuffled() else queue
+        mediaConn?.clearMediaItems()
+        for (song in queueToLoad) {
+            mediaConn?.addMediaItem(song.toMediaItem())
+        }
+        playerState.update { it.copy(shuffling = shuffling, queue = queueToLoad) }
+        syncWithExoPlayer()
     }
 
-    override fun seekPosition(position: Int): Result<Unit> {
-        TODO("Not yet implemented")
+    private fun seekPosition(position: Long) {
+        mediaConn?.seekTo(position)
     }
 
-    override fun clearQueue() {
-        TODO("Not yet implemented")
+    fun clearQueue() {
+        mediaConn?.clearMediaItems().let {
+            queue = emptyList<Song>().toMutableList()
+            playerState.update { it.copy(queue = emptyList()) }
+        }
     }
 
-    override fun loadSong(song: Song) {
-        println("loading song: ${song.name}")
-        val songMediaItem = song.toMediaItem()
-        println("song info artist: ${songMediaItem.mediaMetadata.artist}")
-        mediaConn?.addMediaItem(song.toMediaItem())
+    fun loadSong(song: Song) {
+        mediaConn?.addMediaItem(song.toMediaItem())?.let {
+            queue.add(song)
+            playerState.update { it.copy(queue = it.queue + song) }
+        }
         mediaConn?.prepare()
     }
 
-    override fun addOnChangeListener(callback: () -> Unit) {
-        if (!onChangeCallbacks.contains(callback)) onChangeCallbacks.add(callback)
+    private fun syncWithExoPlayer() {
+        playerState.update {
+            it.copy(
+                queuePosition = mediaConn?.currentMediaItemIndex?:0,
+                playing = mediaConn?.isPlaying?:false,
+                loopState = when (mediaConn?.repeatMode){
+                    Player.REPEAT_MODE_OFF -> {LoopState.None}
+                    Player.REPEAT_MODE_ONE -> {LoopState.Single}
+                    Player.REPEAT_MODE_ALL -> {LoopState.Full}
+                    else -> {LoopState.None}
+                },
+                trackPositionMS = mediaConn?.currentPosition?:0L,
+                trackDurationMS = if (mediaConn != null && mediaConn!!.duration > 0 ) mediaConn!!.duration else 1000L
+            )
+        }
     }
 }

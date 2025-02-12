@@ -4,10 +4,12 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -16,57 +18,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import org.mantis.muse.R
-import org.mantis.muse.util.toAlbumArt
-import org.mantis.muse.viewmodels.MediaPlayerViewModel
 import kotlin.math.roundToInt
 
 @Preview(widthDp = 400, heightDp = 100, backgroundColor = 0xFF_00_00_FFL)
 @Composable
-fun PlayerChipPreview(){
+fun PlayerChipPreview() {
     val context = LocalContext.current
     val bml = BitmapFactory.decodeResource(context.resources, R.drawable.last_button)
     val bmh = BitmapFactory.decodeResource(context.resources, R.drawable.home_icon)
-
-    MediaPlayerChip(
-        bmh,
+    val fogColor: Color = remember{sampleImage(bmh)}
+    MinimisedMediaPlayerUI(
+        bmh.asImageBitmap(),
         "SongName",
         "ArtistName",
         false,
-        {},{},
+        {}, {},
+        fogColor,
         modifier = Modifier.width(400.dp).fillMaxHeight()
-    )
-}
-
-@Composable
-fun PlayerChipStateful(
-    modifier: Modifier = Modifier,
-    viewModel: MediaPlayerViewModel = viewModel<MediaPlayerViewModel>()
-) {
-    val res = LocalContext.current.resources
-    MediaPlayerChip(
-        image = if (viewModel.currentSong == null || viewModel.currentSong!!.toAlbumArt() == null) {
-            BitmapFactory.decodeResource(res, R.drawable.home_icon)
-        } else {
-            viewModel.currentSong!!.toAlbumArt()!!
-        },
-        songName = viewModel.currentSong?.name ?: "Nothing is playing",
-        artistName = viewModel.currentSong?.artist ?: "Unknown",
-        playing = viewModel.playing,
-        playPauseOnClick = viewModel::togglePlayPauseState,
-        skipNextOnClick = viewModel::skipNext,
-        modifier = modifier
     )
 }
 
@@ -79,27 +57,29 @@ fun PlayerChipStateful(
  * - implement in scene
  */
 @Composable
-fun MediaPlayerChip(
-    image: Bitmap,
+fun MinimisedMediaPlayerUI(
+    image: ImageBitmap,
     songName: String,
     artistName: String,
     playing: Boolean,
     playPauseOnClick: () -> Unit,
     skipNextOnClick: () -> Unit,
+    fogColor: Color,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier.clip(RoundedCornerShape(40))
     ) {
         Image(
-            painter = BitmapPainter(image.asImageBitmap()),
+            painter = BitmapPainter(image),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
         )
         Box(modifier = Modifier.fillMaxSize().graphicsLayer(alpha = 0.5f).background(Color.Black))
-        val fogColor: Color = remember{sampleImage(image)}
+
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -126,12 +106,19 @@ fun MediaPlayerChip(
                 Text(
                     text = songName,
                     color = Color.White,
-                    fontSize = 25.sp,
+                    style = MaterialTheme.typography.titleLarge,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-
+                    modifier = Modifier
+                        .basicMarquee(Int.MAX_VALUE)
                 )
-                Text(text = artistName, color = Color.White, fontSize = 20.sp)
+                Text(
+                    text = artistName,
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .basicMarquee(Int.MAX_VALUE)
+                )
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically

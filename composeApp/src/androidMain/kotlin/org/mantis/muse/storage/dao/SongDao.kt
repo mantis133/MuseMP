@@ -9,12 +9,12 @@ import org.mantis.muse.storage.entity.SongEntity
 
 @Dao
 interface SongDao {
-//    @Query("SELECT * FROM songs")
-//    fun getAll(): Flow<List<SongEntity>>
-//
-//    @Insert
-//    suspend fun insertSongs(vararg song: SongEntity)
-//
-//    @Delete
-//    suspend fun deleteSong(song: SongEntity)
+    @Query("SELECT * FROM songs")
+    fun getAll(): Flow<List<SongEntity>>
+
+    @Insert
+    suspend fun insertSongs(vararg song: SongEntity)
+
+    @Delete
+    suspend fun deleteSong(song: SongEntity)
 }

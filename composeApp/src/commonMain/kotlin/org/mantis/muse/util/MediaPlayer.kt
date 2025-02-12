@@ -14,7 +14,7 @@ enum class MediaPlayerEvent{
  */
 interface MediaPlayer {
     var currentSong: Song
-    var queue: List<Song>
+    var queue: MutableList<Song>
 
     var playingState: Boolean
     var loopState: LoopState

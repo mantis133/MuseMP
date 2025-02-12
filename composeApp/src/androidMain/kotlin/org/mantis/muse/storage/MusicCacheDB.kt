@@ -9,11 +9,11 @@ import org.mantis.muse.storage.entity.SongEntity
 
 @Database(
     entities = [
-        PlaylistEntity::class
-//        SongEntity::class
+        PlaylistEntity::class,
+        SongEntity::class
                ],
     exportSchema = false,
-    version = 1
+    version = 2
 )
 abstract class MusicCacheDB: RoomDatabase() {
     abstract fun playlistDAO(): PlaylistDAO
