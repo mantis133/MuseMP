@@ -4,8 +4,13 @@ import android.graphics.Bitmap
 import java.io.File
 import java.net.URI
 
-class Playlist(val filePath: String, val name: String, val songList: List<Song>) {
-    companion object{}
+class Playlist(
+    val filePath: String,
+    val name: String,
+    val songList: List<Song>,
+    val fileURI: URI
+) {
+    companion object
 
 
     val size: Int
@@ -33,6 +38,18 @@ fun Playlist.Companion.fromURI(fileURI: URI): Playlist{
     return Playlist(
         filePath = playlistFile.absolutePath,
         name = playlistFile.nameWithoutExtension,
-        songList = songs
+        songList = songs,
+        fileURI = fileURI
+    )
+}
+
+fun Playlist.Companion.cheapFromURI(fileURI: URI): Playlist {
+    val playlistFile: File = File(fileURI)
+
+    return Playlist(
+        filePath = playlistFile.absolutePath,
+        name = playlistFile.nameWithoutExtension,
+        songList = listOf(),
+        fileURI = fileURI
     )
 }

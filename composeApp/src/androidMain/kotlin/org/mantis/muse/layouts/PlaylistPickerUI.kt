@@ -18,6 +18,7 @@ import org.mantis.muse.viewmodels.PlaylistPickerViewModel
 import org.mantis.muse.viewmodels.PlaylistsScreenUiState
 import org.mantis.muse.layouts.components.PlaylistCard
 import org.mantis.muse.util.*
+import java.net.URI
 
 @Preview(showBackground = true, widthDp = 400, heightDp = 600)
 @Composable
@@ -28,7 +29,8 @@ fun PlaylistScreenPreview() {
         listOf(
             Song("songName", "artistName", 0f, "filePath"),
             Song("songName2","artistName2", 0f,"filePath2")
-        )
+        ),
+        URI("")
     )
     val playlist2 = Playlist(
         "path",
@@ -36,7 +38,8 @@ fun PlaylistScreenPreview() {
         listOf(
             Song("songName", "artistName", 0f, "filePath"),
             Song("songName3","artistName3", 0f,"filePath3")
-        )
+        ),
+        URI("")
     )
     val playlist3 = Playlist(
         "path",
@@ -44,7 +47,8 @@ fun PlaylistScreenPreview() {
         listOf(
             Song("songName", "artistName", 0f, "filePath"),
             Song("songName3","artistName3", 0f,"filePath3")
-        )
+        ),
+        URI("")
     )
     val playlists = listOf(playlist, playlist2,playlist3, playlist3,playlist2)
     MaterialTheme {

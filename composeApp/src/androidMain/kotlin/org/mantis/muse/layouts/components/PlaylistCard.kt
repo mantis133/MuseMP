@@ -21,6 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import org.mantis.muse.R
 import org.mantis.muse.util.Playlist
 import org.mantis.muse.util.coverArt
+import java.net.URI
 
 @Preview
 @Composable
@@ -29,7 +30,8 @@ fun PlaylistCardPreview(
     PlaylistCard(
         Playlist(
             "","cool name",
-            listOf()
+            listOf(),
+            URI("")
         ),
     )
 }

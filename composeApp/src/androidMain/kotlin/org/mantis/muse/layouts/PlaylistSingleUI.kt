@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import org.mantis.muse.R
 import org.mantis.muse.util.Playlist
 import org.mantis.muse.util.Song
+import java.net.URI
 
 @Preview
 @Composable
@@ -33,7 +34,8 @@ fun SinglePlaylistPreview(){
             Song("cool guy","cool guys", 0f, ""),
             Song("cool guy","cool guys2", 0f, ""),
             Song("bad man","evil things", 0f, ""),
-        )
+        ),
+        URI("")
     )
     PlaylistSingleUI(
         playlist = playlist,

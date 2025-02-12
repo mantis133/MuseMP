@@ -1,5 +1,6 @@
 package org.mantis.muse.viewmodels
 
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -11,6 +12,7 @@ import org.mantis.muse.repositories.PlaylistRepository
 import org.mantis.muse.storage.LocalFileSource
 import org.mantis.muse.util.AndroidMediaPlayer
 import org.mantis.muse.util.Playlist
+import org.mantis.muse.util.fromURI
 
 sealed interface PlaylistsScreenUiState {
     data object Loading : PlaylistsScreenUiState
@@ -34,7 +36,8 @@ class PlaylistPickerViewModel(
 
     fun loadPlaylist(playlist: Playlist) = viewModelScope.launch {
         player.clearQueue()
-        if (playlist.songList.isNotEmpty()) playlist.songList.forEach { player.loadSong(it) }
+        val loadablePlaylist = Playlist.Companion.fromURI(playlist.fileURI)
+        if (loadablePlaylist.songList.isNotEmpty()) loadablePlaylist.songList.forEach { player.loadSong(it) }
     }
 
     fun updateCaches() = viewModelScope.launch {  }

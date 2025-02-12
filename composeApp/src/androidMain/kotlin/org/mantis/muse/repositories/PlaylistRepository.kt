@@ -6,6 +6,7 @@ import org.mantis.muse.storage.LocalFileSource
 import org.mantis.muse.storage.dao.PlaylistDAO
 import org.mantis.muse.storage.entity.PlaylistEntity
 import org.mantis.muse.util.Playlist
+import org.mantis.muse.util.cheapFromURI
 import org.mantis.muse.util.fromURI
 
 class PlaylistRepository(
@@ -23,8 +24,8 @@ class PlaylistRepository(
 //    }
 
     val playlistStream: Flow<List<Playlist>> = localFiles.localPlaylistFiles.map{ it.map { playlistFile ->
-        Playlist.Companion.fromURI(playlistFile.toURI())
-    }
+            Playlist.Companion.cheapFromURI(playlistFile.toURI())
+        }
     }
 
 //    suspend fun updateCache(){
