@@ -3,46 +3,39 @@ package org.mantis.muse.util
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import android.net.Uri
+import androidx.core.net.toFile
 import androidx.media3.common.MediaItem
 import java.io.File
 
-//class Song(val name: String, val artist: String, val lengthMs: Float, val filePath: String) {
-//    constructor(filePath: String): this(
-//        name = "",
-//        artist = "",
-//        0f,
-//        filePath = filePath,
-//    )
-//
-//    override fun toString(): String {
-//        return "$name, $artist, $filePath"
-//    }
-//
-//}
+class Song(val name: String, val artist: List<String>, val fileUri: Uri) {
 
-//expect fun Song.toAlbumArt(): Bitmap?
+    override fun toString(): String {
+        return "$name, $artist, $fileUri"
+    }
 
+}
 
 fun Song.toAlbumArt(): Bitmap? {
-    val file = File(this.filePath)
+    val file = fileUri.toFile()
     val mmr = MediaMetadataRetriever()
     mmr.setDataSource(file.path)
     return if (mmr.embeddedPicture == null) null else BitmapFactory.decodeByteArray(mmr.embeddedPicture, 0, mmr.embeddedPicture!!.size)
 }
 
 fun Song.toMediaItem(): MediaItem {
-    return MediaItem.fromUri(this.filePath)
+    return MediaItem.fromUri(fileUri)
 }
 
-fun fromFilePath(filepath: String): Song{
-    val file = File(filepath)
+fun fromFilePath(fileUri: Uri): Song{
+    val file = fileUri.toFile()
     val mmr = MediaMetadataRetriever()
     mmr.setDataSource(file.path)
     val artists = when (val a = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)){
         null -> "Unknown"
         else -> a
     }
-    return Song(file.nameWithoutExtension, artists, 0f, filepath)
+    return Song(file.nameWithoutExtension, listOf(artists), fileUri)
 }
 
 //fun getAlbumCover() : Bitmap?{

@@ -21,8 +21,8 @@ class LocalFileSource(
         MediaStore.Files.getContentUri("external")
     }
 
-    val localMp3Files: Flow<File>
-        get() = dataSources.flatMap { dir -> dir.walkTopDown().filter{ it.extension == "mp3" } }.asFlow()
+    val localMp3Files: Flow<List<File>>
+        get() = dataSources.map { dir -> dir.walkTopDown().filter{ it.extension == "mp3" }.toList() }.asFlow()
 
     val localPlaylistFiles: Flow<List<File>>
         get() = dataSources.map { dir -> dir.walkTopDown().filter { it.extension == "m3u" }.toList() }.asFlow()

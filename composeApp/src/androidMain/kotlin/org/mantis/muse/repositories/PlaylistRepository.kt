@@ -1,5 +1,7 @@
 package org.mantis.muse.repositories
 
+import androidx.core.net.toUri
+import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.mantis.muse.storage.LocalFileSource
@@ -24,7 +26,7 @@ class PlaylistRepository(
 //    }
 
     val playlistStream: Flow<List<Playlist>> = localFiles.localPlaylistFiles.map{ it.map { playlistFile ->
-            Playlist.Companion.cheapFromURI(playlistFile.toURI())
+            Playlist.Companion.cheapFromURI(playlistFile.toUri())
         }
     }
 
@@ -34,12 +36,15 @@ class PlaylistRepository(
 //        }
 //    }
 
+    fun getAllPlaylists(): Flow<List<PlaylistEntity>> {
+        return playlistDao.getAllPlaylists()
+    }
 
     suspend fun addNewPlaylist(playlist: Playlist) {
-        playlistDao.insertPlaylists(PlaylistEntity(0, playlist.name, playlist.filePath))
+        playlistDao.insertPlaylists(PlaylistEntity(0, playlist.name, playlist.fileURI))
     }
 
     suspend fun removePlaylist(playlist: Playlist) {
-        playlistDao.deletePlaylist(PlaylistEntity(0, playlist.name, playlist.filePath))
+        playlistDao.deletePlaylist(PlaylistEntity(0, playlist.name, playlist.fileURI))
     }
 }

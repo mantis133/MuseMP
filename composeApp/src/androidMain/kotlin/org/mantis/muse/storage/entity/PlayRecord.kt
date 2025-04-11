@@ -18,7 +18,7 @@ enum class RecordableActions {
 
 @Entity(tableName = "songRecords")
 data class PlayRecord(
-    @PrimaryKey(autoGenerate = true) val id: Int,
+    @PrimaryKey(autoGenerate = true) val id: Long,
     val songName: String,
     val songArtists: String,
     val playlistName: String?,
