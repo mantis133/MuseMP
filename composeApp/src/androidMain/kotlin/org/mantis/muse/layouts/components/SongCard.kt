@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.net.toUri
 import org.mantis.muse.R
 import org.mantis.muse.util.Song
 import org.mantis.muse.util.toAlbumArt
@@ -29,7 +30,7 @@ fun SongCard(
         )
         Column {
             Text(song.name)
-            Text(song.artist)
+            Text(song.artist.joinToString(", "))
         }
     }
 }
@@ -40,9 +41,8 @@ fun SongCard(
 fun SongCardPreview(){
     val exampleSong = Song(
         "Orbit",
-        "Good Kid",
-        0f,
-        "NULL"
+        listOf("Good Kid"),
+        "NULL".toUri()
     )
     SongCard(
         song = exampleSong

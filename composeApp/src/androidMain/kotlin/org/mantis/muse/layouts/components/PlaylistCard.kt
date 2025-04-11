@@ -1,6 +1,7 @@
 package org.mantis.muse.layouts.components
 
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType.Companion.Uri
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.net.toUri
 import org.mantis.muse.R
 import org.mantis.muse.util.Playlist
 import org.mantis.muse.util.coverArt
@@ -29,9 +32,9 @@ fun PlaylistCardPreview(
 ) {
     PlaylistCard(
         Playlist(
-            "","cool name",
+            "cool name",
             listOf(),
-            URI("")
+            "".toUri()
         ),
     )
 }

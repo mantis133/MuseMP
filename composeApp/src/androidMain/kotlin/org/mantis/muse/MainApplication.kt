@@ -12,6 +12,7 @@ import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
+import org.mantis.muse.repositories.MediaRepository
 import org.mantis.muse.repositories.PlaylistRepository
 import org.mantis.muse.repositories.SongRepository
 import org.mantis.muse.storage.LocalFileSource
@@ -78,10 +79,14 @@ class MainApplication: Application() {
                         // DAO instances
                         single { get<MusicCacheDB>().playlistDAO() }
                         single { get<MusicCacheDB>().songDAO() }
+                        single { get<MusicCacheDB>().artistDAO() }
+                        single { get<MusicCacheDB>().artistSongRelationDao() }
+                        single { get<MusicCacheDB>().playlistSongRelationDao() }
 
                         // Repository instances
                         single { SongRepository(get(), get()) }
                         single { PlaylistRepository(get(), get()) }
+                        single { MediaRepository(get(), get(), get(), get(), get()) }
 
                         // ViewModel instances
                         viewModel { MediaPlayerViewModel(get<AndroidMediaPlayer>()) }

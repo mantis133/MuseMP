@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.mantis.muse.viewmodels.PlaylistPickerViewModel
@@ -24,31 +25,28 @@ import java.net.URI
 @Composable
 fun PlaylistScreenPreview() {
     val playlist = Playlist(
-        "path",
         "cool list name",
         listOf(
-            Song("songName", "artistName", 0f, "filePath"),
-            Song("songName2","artistName2", 0f,"filePath2")
+            Song("songName", listOf("artistName"), "filePath".toUri()),
+            Song("songName2",listOf("artistName2"),"filePath2".toUri())
         ),
-        URI("")
+        "".toUri()
     )
     val playlist2 = Playlist(
-        "path",
         "cool list name2",
         listOf(
-            Song("songName", "artistName", 0f, "filePath"),
-            Song("songName3","artistName3", 0f,"filePath3")
+            Song("songName", listOf("artistName"), "filePath".toUri()),
+            Song("songName3",listOf("artistName3"), "filePath3".toUri())
         ),
-        URI("")
+        "".toUri()
     )
     val playlist3 = Playlist(
-        "path",
         "cool list name3",
         listOf(
-            Song("songName", "artistName", 0f, "filePath"),
-            Song("songName3","artistName3", 0f,"filePath3")
+            Song("songName", listOf("artistName"), "filePath".toUri()),
+            Song("songName3",listOf("artistName3"),"filePath3".toUri())
         ),
-        URI("")
+        "".toUri()
     )
     val playlists = listOf(playlist, playlist2,playlist3, playlist3,playlist2)
     MaterialTheme {

@@ -19,6 +19,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import org.mantis.muse.R
 import org.mantis.muse.util.Playlist
 import org.mantis.muse.util.Song
@@ -28,14 +29,13 @@ import java.net.URI
 @Composable
 fun SinglePlaylistPreview(){
     val playlist: Playlist = Playlist(
-        filePath = "",
         name = "the list of the century",
         songList = listOf(
-            Song("cool guy","cool guys", 0f, ""),
-            Song("cool guy","cool guys2", 0f, ""),
-            Song("bad man","evil things", 0f, ""),
+            Song("cool guy",listOf("cool guys"), "".toUri()),
+            Song("cool guy",listOf("cool guys2"), "".toUri()),
+            Song("bad man",listOf("evil things"), "".toUri()),
         ),
-        URI("")
+        "".toUri()
     )
     PlaylistSingleUI(
         playlist = playlist,

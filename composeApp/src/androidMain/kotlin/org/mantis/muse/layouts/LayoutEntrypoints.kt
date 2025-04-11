@@ -58,7 +58,7 @@ fun MediaPlayerUI(
     val currentSong = if (uiState.queue.size > uiState.queuePosition) uiState.queue[uiState.queuePosition] else null
     val songThumbnail = currentSong?.toAlbumArt()?.asImageBitmap()?:BitmapFactory.decodeResource(LocalContext.current.resources, R.drawable.home_icon).asImageBitmap()
     val songName = currentSong?.name?:"Nothing is playing"
-    val songArtists = currentSong?.artist?:"Unknown"
+    val songArtists = currentSong?.artist?.joinToString(", ")?:"Unknown"
     when (expansionState) {
         is MediaPlayerUIState.Expanded -> {
             when ((expansionState as MediaPlayerUIState.Expanded).songListVisible){

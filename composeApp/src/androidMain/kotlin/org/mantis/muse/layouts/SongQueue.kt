@@ -61,7 +61,7 @@ fun SongQueue(
                         color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground,
                     )
                     Text(
-                        text = song.artist,
+                        text = song.artist.joinToString(", "),
                         color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground,
                     )
                 }
