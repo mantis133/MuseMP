@@ -24,12 +24,6 @@ class SongRepository(
 //        }
 //    }
 
-    suspend fun updateSongCache(){
-        localFileSource.localMp3Files.collectLatest { song ->
-            songDao.insertSongs(SongEntity(0, song.name, "ARTISTS"))
-        }
-    }
-
     fun getAllFromInternals(context: Context): Flow<List<Song>> {
         val filePaths = mutableListOf<String>()
         context.contentResolver.query(

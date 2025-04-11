@@ -1,20 +1,18 @@
 package org.mantis.muse.storage.entity
 
-import android.net.Uri
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
-    tableName = "song",
+    tableName = "artist",
     indices = [
-        Index(value = ["name"], unique = true),
-        Index(value = ["uri"], unique = true)
+        Index(value = ["name"], unique = true)
     ]
 )
-data class SongEntity(
+data class ArtistEntity(
     @PrimaryKey(autoGenerate = true) val id: Long,
     val name: String,
-    val filename: String,
-    val uri: Uri
+    val youtube: String?,
+    val spotify: String?,
 )
