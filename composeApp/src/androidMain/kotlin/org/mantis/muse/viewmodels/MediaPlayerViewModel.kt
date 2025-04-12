@@ -1,12 +1,19 @@
 package org.mantis.muse.viewmodels
 
+import android.app.Application
+import android.content.ComponentName
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaBrowser
+import androidx.media3.session.SessionToken
+import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.flow.*
+import org.mantis.muse.services.PlaybackService
 import org.mantis.muse.util.AndroidMediaPlayer
 import org.mantis.muse.util.AndroidMediaPlayerState
 import org.mantis.muse.util.LoopState
@@ -18,7 +25,9 @@ sealed interface MediaPlayerUIState{
     data class Expanded(var songListVisible: Boolean): MediaPlayerUIState
 }
 
+@UnstableApi
 class MediaPlayerViewModel(
+    private val app: Application,
     private val player: AndroidMediaPlayer
 ): ViewModel() {
 
@@ -59,29 +68,41 @@ class MediaPlayerViewModel(
     var playing: Boolean by mutableStateOf(false)
     var loopState: LoopState by mutableStateOf(LoopState.None)
     private var shuffling: Boolean by mutableStateOf(false)
+    val mediaBrowser = MediaBrowser.Builder(
+        app,
+        SessionToken(app, ComponentName(app, PlaybackService::class.java))
+    ).buildAsync()
+
 
     fun play(){
-        player.play()
+        mediaBrowser.get().play()
     }
 
     fun pause(){
-        player.pause()
+        mediaBrowser.get().pause()
     }
 
     fun togglePlayPauseState(){
-        if (uiState.value.playing) player.pause() else player.play()
+        mediaBrowser.get().apply {
+            if (isPlaying) {
+                pause()
+            } else {
+                play()
+            }
+        }
+        println(mediaBrowser.get().mediaItemCount)
     }
 
     fun skipNext(){
-        player.skipNext()
+//        player.skipNext()
     }
 
     fun skipLast(){
-        player.skipLast()
+//        player.skipLast()
     }
 
     fun seekToSong(queueIndex: Int) {
-        player.skipToIndex(queueIndex)
+//        player.skipToIndex(queueIndex)
     }
 
     fun seekToSong(song: Song) {
@@ -89,20 +110,20 @@ class MediaPlayerViewModel(
     }
 
     fun toggleShuffle(){
-        this.shuffling = !this.shuffling
-        player.setShuffle(this.shuffling)
+//        this.shuffling = !this.shuffling
+//        player.setShuffle(this.shuffling)
     }
 
     fun nextLoopState(){
-        player.loopState = when(player.loopState){
-            LoopState.None -> LoopState.Single
-            LoopState.Single -> LoopState.Full
-            LoopState.Full -> LoopState.None
-        }
-        this.loopState = player.loopState
+//        player.loopState = when(player.loopState){
+//            LoopState.None -> LoopState.Single
+//            LoopState.Single -> LoopState.Full
+//            LoopState.Full -> LoopState.None
+//        }
+//        this.loopState = player.loopState
     }
 
     fun seekTo(position: Long) {
-        player.trackPositionMS = position
+//        player.trackPositionMS = position
     }
 }

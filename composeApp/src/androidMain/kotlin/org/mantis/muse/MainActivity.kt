@@ -9,12 +9,16 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.net.toUri
+import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaBrowser
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
@@ -39,9 +43,6 @@ import org.mantis.muse.util.fromURI
 import kotlin.coroutines.CoroutineContext
 
 class MainActivity : ComponentActivity() {
-    private var conn: MediaController? = null
-    private val player by inject<AndroidMediaPlayer>()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -49,33 +50,33 @@ class MainActivity : ComponentActivity() {
 
         checkPermissions()
 
-        val localFiles: LocalFileSource = get()
-        val mediaRepository: MediaRepository = get()
+//        val localFiles: LocalFileSource = get()
+//        val mediaRepository: MediaRepository = get()
 
-        GlobalScope.launch(Dispatchers.IO){
-            localFiles.localPlaylistFiles.collect { files ->
-                val playlists = files.map {
-                    Playlist(
-                        it.nameWithoutExtension,
-                        listOf(),
-                        it.toUri()
-                    )
-                }.onEach { playlist -> mediaRepository.insertPlaylist(playlist) }
-            }
-            localFiles.localMp3Files.collect { files ->
-                val songs = files
-                    .map { fromFilePath(it.toUri()) }
-                    .onEach { song -> mediaRepository.insertSong(song) }
-            }
-            mediaRepository.playlistsStream.collect { playlists ->
-                playlists.onEach { playlist ->
-                    val completePlaylist = Playlist.Companion.fromURI(playlist.fileURI)
-                    completePlaylist.songList.forEach { song ->
-                        mediaRepository.addSongToPlaylist(playlist, song)
-                    }
-                }
-            }
-        }
+//        GlobalScope.launch(Dispatchers.IO){
+//            localFiles.localPlaylistFiles.collect { files ->
+//                val playlists = files.map {
+//                    Playlist(
+//                        it.nameWithoutExtension,
+//                        listOf(),
+//                        it.toUri()
+//                    )
+//                }.onEach { playlist -> mediaRepository.insertPlaylist(playlist) }
+//            }
+//            localFiles.localMp3Files.collect { files ->
+//                val songs = files
+//                    .map { fromFilePath(it.toUri()) }
+//                    .onEach { song -> mediaRepository.insertSong(song) }
+//            }
+//            mediaRepository.playlistsStream.collect { playlists ->
+//                playlists.onEach { playlist ->
+//                    val completePlaylist = Playlist.Companion.fromURI(playlist.fileURI)
+//                    completePlaylist.songList.forEach { song ->
+//                        mediaRepository.addSongToPlaylist(playlist, song)
+//                    }
+//                }
+//            }
+//        }
 
         setContent {
             MuseTheme{
@@ -92,28 +93,20 @@ class MainActivity : ComponentActivity() {
 
     }
 
+    @OptIn(UnstableApi::class)
     override fun onStart() {
         super.onStart()
+//        var browser: MediaBrowser? = null
 //        val sessionToken = SessionToken(this, ComponentName(this, PlaybackService::class.java))
-//        val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
-//        controllerFuture.addListener(
-//            {
-//                conn = controllerFuture.get()
-//                conn.value.addListener(object: Player.Listener{
-//                    override fun onPlaybackStateChanged(playbackState: Int) {
-//                        super.onPlaybackStateChanged(playbackState)
-//                        if(playbackState == Player.STATE_READY) {
-////                            songPosition = conn!!.currentPosition.toInt()
-//                            Log.d("time", conn!!.currentPosition.toString())
-//                        }
-//                    }
-//
-//                })
-//                player.mediaConn = conn
-//                println("Media Controller is loaded")
-//            },
-//            MoreExecutors.directExecutor()
-//        )
+
+//        val browserFuture = MediaBrowser.Builder(this, sessionToken).buildAsync()
+//        browserFuture.addListener({
+//                browser = browserFuture.get()
+//                val mi: MediaItem = browser?.getItem("SONGSummer")?.get()?.value?:throw IllegalArgumentException("harahar")
+//                browser.addMediaItem(mi)
+//                browser.prepare()
+//                browser.play()
+//            }, MoreExecutors.directExecutor())
     }
 
     private fun checkPermissions() {

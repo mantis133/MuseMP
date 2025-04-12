@@ -1,6 +1,8 @@
 package org.mantis.muse
 
 import android.app.Application
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import androidx.room.Room
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +55,7 @@ class MainApplication: Application() {
 //        viewModel { PlaylistPickerViewModel(get(),get(),get<AndroidMediaPlayer>()) }
 //    }
 
+    @OptIn(UnstableApi::class)
     override fun onCreate() {
         super.onCreate()
         println("Its Starting")
@@ -89,8 +92,8 @@ class MainApplication: Application() {
                         single { MediaRepository(get(), get(), get(), get(), get()) }
 
                         // ViewModel instances
-                        viewModel { MediaPlayerViewModel(get<AndroidMediaPlayer>()) }
-                        viewModel { PlaylistPickerViewModel(get(),get(),get<AndroidMediaPlayer>()) }
+                        viewModel { MediaPlayerViewModel(get(), get()) }
+                        viewModel { PlaylistPickerViewModel(get(),get()) }
                     }
                 )
             }

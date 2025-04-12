@@ -47,11 +47,39 @@ class MediaRepository(
         }
     }
 
+    @Transaction
+    suspend fun getSongById(songId: Long): Song?{
+        val songEnt = songDao.getSongById(songId)?:return null
+        val artists = artistDao.getArtistsBySong(songId).map{ artist -> Artist(artist.name) }.map{ it.name }
+        return Song(songEnt.name, artists, songEnt.uri)
+    }
+
+    @Transaction
+    suspend fun getSongByName(songName: String): Song? {
+        val songEnt = songDao.getSongByName(songName)?:return null
+        val artists = artistDao.getArtistsBySong(songEnt.id).map{ artist -> Artist(artist.name) }.map{ it.name }
+        return Song(songEnt.name, artists, songEnt.uri)
+    }
+
+    @Transaction
+    suspend fun getPlaylistByName(playlistName: String): Playlist? {
+        val playlistEntity = playlistDao.getPlaylistByName(playlistName)?:return null
+        return Playlist(
+            playlistEntity.name,
+            songDao.getSongsInPlaylist(playlistEntity.id).map { Song(it.name, artistDao.getArtistsBySong(it.id).map { it.name }, it.uri) },
+            playlistEntity.fileUri
+        )
+    }
+
     suspend fun getSongsByArtist(){}
 
     suspend fun getArtistsBySong(){}
 
-    suspend fun getSongsByPlaylist(playlistName: String){}
+    @Transaction
+    suspend fun getSongsByPlaylist(playlistName: String): List<Song>{
+        val playlistId = playlistDao.getPlaylistByName(playlistName)?.id
+        return songDao.getSongsInPlaylist(playlistId!!).map { Song(it.name, artistDao.getArtistsBySong(it.id).map { it.name }, it.uri) }
+    }
     @Transaction
     suspend fun getSongsByPlaylist(playlist: Playlist): List<Song>{
         val playlistId = playlistDao.getPlaylistByName(playlist.name)?.id

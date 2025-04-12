@@ -1,6 +1,7 @@
 package org.mantis.muse.layouts
 
 import android.graphics.BitmapFactory
+import androidx.annotation.OptIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,12 +25,14 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.util.UnstableApi
 import org.koin.compose.viewmodel.koinViewModel
 import org.mantis.muse.R
 import org.mantis.muse.util.toAlbumArt
 import org.mantis.muse.viewmodels.MediaPlayerUIState
 import org.mantis.muse.viewmodels.MediaPlayerViewModel
 
+@OptIn(UnstableApi::class)
 @Composable
 fun MediaPlayerUI(
     modifier: Modifier = Modifier,
