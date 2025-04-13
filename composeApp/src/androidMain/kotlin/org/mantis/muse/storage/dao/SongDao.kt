@@ -5,7 +5,6 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy.Companion.IGNORE
 import androidx.room.Query
-import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 import org.mantis.muse.storage.entity.SongEntity
 
@@ -22,6 +21,9 @@ interface SongDao {
 
     @Query("SELECT * FROM song WHERE id IN (SELECT songId FROM playlist_song_entry where playlistId = :playlistId)")
     suspend fun getSongsInPlaylist(playlistId: Long): List<SongEntity>
+
+    @Query("SELECT * FROM song WHERE id in (SELECT songId FROM artist_song_record WHERE artistId = :artistId)")
+    suspend fun getSongsFromArtist(artistId: Long): List<SongEntity>
 
     @Insert(onConflict = IGNORE)
     suspend fun insertSongs(song: SongEntity): Long

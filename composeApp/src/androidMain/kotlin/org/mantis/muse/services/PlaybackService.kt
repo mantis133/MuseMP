@@ -5,16 +5,12 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Build
 import androidx.annotation.OptIn
-import androidx.annotation.RequiresApi
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.LibraryResult
-import androidx.media3.session.MediaBrowser
 import androidx.media3.session.MediaLibraryService.LibraryParams
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
@@ -23,20 +19,11 @@ import androidx.media3.session.SessionError
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
-import org.koin.android.ext.android.getKoin
 import org.koin.android.ext.android.inject
 import org.mantis.muse.repositories.MediaRepository
-import org.mantis.muse.util.MediaId
-import org.mantis.muse.util.MediaId.Folder
-import org.mantis.muse.util.MediaId.Playlist
 import org.mantis.muse.util.MediaId.Root
-import org.mantis.muse.util.MediaId.Song
-import org.mantis.muse.util.toId
 import org.mantis.muse.util.toMuseMediaId
+import java.lang.IllegalStateException
 
 @UnstableApi
 class PlaybackService : MediaSessionService() {
@@ -44,96 +31,6 @@ class PlaybackService : MediaSessionService() {
     private var session : MediaLibrarySession? = null
     val mr by inject<MediaRepository>()
     private var callbacks = MLCallbacks(mr)
-    val c = object: MediaLibrarySession.Callback {
-        override fun onGetLibraryRoot(
-            session: MediaLibrarySession,
-            controller: MediaSession.ControllerInfo,
-            params: LibraryParams?
-        ): ListenableFuture<LibraryResult<MediaItem>> {
-            val mediaItem = MediaItem.Builder()
-                    .setMediaId("root")
-                    .setMediaMetadata(
-                        MediaMetadata.Builder()
-                            .setTitle("My Music Library")
-                            .setIsBrowsable(true)
-                            .build()
-                    )
-                    .build()
-            return Futures.immediateFuture(LibraryResult.ofItem(mediaItem, params))
-        }
-
-        override fun onGetChildren(
-            session: MediaLibrarySession,
-            controller: MediaSession.ControllerInfo,
-            parentId: String,
-            page: Int,
-            pageSize: Int,
-            params: LibraryParams?
-        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
-            return Futures.immediateFuture(LibraryResult.ofItemList(when (parentId) {
-                "root" -> listOf(
-                    createFolderItem("playlists", "Playlists"),
-                    createFolderItem("songs", "All Songs")
-                )
-
-                "songs" -> getAllSongs()
-                "playlists" -> getAllPlaylists()
-                else -> emptyList()
-            },params))
-        }
-
-        @OptIn(UnstableApi::class)
-        override fun onGetItem(
-            session: MediaLibrarySession,
-            controller: MediaSession.ControllerInfo,
-            mediaId: String
-        ): ListenableFuture<LibraryResult<MediaItem>> {
-            val mediaItem = findMediaItemById(mediaId)
-            if (mediaItem == null) {
-                return Futures.immediateFuture(LibraryResult.ofError(SessionError.ERROR_UNKNOWN));
-            }
-            return Futures.immediateFuture(LibraryResult.ofItem(mediaItem, null))
-        }
-
-        // Helpers
-        private fun createFolderItem(id: String, title: String): MediaItem {
-            return MediaItem.Builder()
-                .setMediaId(id)
-                .setMediaMetadata(
-                    MediaMetadata.Builder()
-                        .setTitle(title)
-                        .setIsBrowsable(true)
-                        .build()
-                )
-                .build()
-        }
-
-        private fun getAllSongs(): List<MediaItem> {
-            // Replace with real query to your media DB
-            return listOf(
-                MediaItem.Builder()
-                    .setMediaId("song1")
-                    .setUri("asset:///song1.mp3")
-                    .setMediaMetadata(
-                        MediaMetadata.Builder()
-                            .setTitle("Song 1")
-                            .setArtist("Artist 1")
-                            .build()
-                    )
-                    .build()
-            )
-        }
-
-        private fun getAllPlaylists(): List<MediaItem> {
-            return listOf(
-                createFolderItem("playlist1", "Favorites")
-            )
-        }
-
-        private fun findMediaItemById(id: String): MediaItem? {
-            return (getAllSongs() + getAllPlaylists()).find { it.mediaId == id }
-        }
-    }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
         return session
@@ -224,9 +121,7 @@ class PlaybackService : MediaSessionService() {
 
 
 @UnstableApi
-class MLCallbacks(
-    val repo: MediaRepository
-) : MediaLibrarySession.Callback {
+class MLCallbacks(val repo: MediaRepository): MediaLibrarySession.Callback {
     var songs = mutableListOf<MediaItem>()
     var plPos = 0
 
@@ -236,20 +131,7 @@ class MLCallbacks(
         params: LibraryParams?
     ): ListenableFuture<LibraryResult<MediaItem>> {
         return Futures.immediateFuture(
-            runBlocking{
-                LibraryResult.ofItem(
-                    MediaItem.Builder()
-                        .setMediaId(Root.toId())
-                        .setMediaMetadata(
-                            MediaMetadata.Builder()
-                                .setTitle("Muse Library")
-                                .setIsBrowsable(true)
-                                .build()
-                        )
-                        .build(),
-                    params
-                )
-            }
+            LibraryResult.ofItem(Root.getInstance(), params)
         )
     }
 
@@ -262,60 +144,9 @@ class MLCallbacks(
         params: LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
         val id = parentId.toMuseMediaId()
-        val contents:List<MediaItem> = when (id) {
-            is Root -> listOf(
-                MediaItem.Builder().setMediaId(Folder("PLAYLISTS").toId()).setMediaMetadata(MediaMetadata.Builder().setTitle("Playlists").setIsBrowsable(true).build()).build(),
-                MediaItem.Builder().setMediaId(Folder("SONGS").toId()).setMediaMetadata(MediaMetadata.Builder().setTitle("Songs").setIsBrowsable(true).build()).build(),
-                MediaItem.Builder().setMediaId(Folder("ARTISTS").toId()).setMediaMetadata(MediaMetadata.Builder().setTitle("Artists").setIsBrowsable(true).build()).build(),
-            )
-            is Folder -> {
-                when (id.type) {
-                    "PLAYLISTS" -> {
-                        runBlocking{
-                            val playlists = repo.playlistsStream.first()
-                            playlists.map { playlist ->
-                                MediaItem.Builder()
-                                    .setMediaId(Playlist(playlist.name).toId())
-                                    .setUri(playlist.fileURI)
-                                    .setMediaMetadata(
-                                        MediaMetadata.Builder()
-                                            .setTitle(playlist.name)
-                                            .setIsBrowsable(true)
-                                            .build()
-                                    )
-                                    .build()
-                            }
-                        }
-                    }
-                    "SONGS" -> TODO()
-                    "ARTISTS" -> TODO()
-                    else -> TODO()
-                }
-            }
-            is Playlist -> {
-                runBlocking{
-                    repo.getSongsByPlaylist(id.selector).map { song ->
-                        MediaItem.Builder()
-                            .setUri(song.fileUri)
-                            .setMediaId(MediaId.Song(song.name).toId())
-                            .setMediaMetadata(
-                                MediaMetadata.Builder()
-                                    .setTitle(song.name)
-                                    .setArtist(song.artist.joinToString(", "))
-                                    .setIsBrowsable(false)
-                                    .setIsPlayable(true)
-                                    .build()
-                            )
-                            .build()
-                    }
-                }
-            }
-            is MediaId.Song -> emptyList()
-        }
+        val contents:List<MediaItem> = id.getChildren()
         return Futures.immediateFuture(
-            runBlocking {
                 LibraryResult.ofItemList(contents, params)
-            }
         )
     }
 
@@ -326,49 +157,8 @@ class MLCallbacks(
         mediaId: String
     ): ListenableFuture<LibraryResult<MediaItem>> {
         val id = mediaId.toMuseMediaId()
-        if (id is Playlist) {
-            val playlist = runBlocking {
-                repo.getPlaylistByName(id.selector)
-            }?:return Futures.immediateFuture(LibraryResult.ofError(SessionError.ERROR_INVALID_STATE))
-            return Futures.immediateFuture(LibraryResult.ofItem(
-                MediaItem.Builder()
-                    .setUri(playlist.fileURI)
-                    .setMediaId(mediaId)
-                    .setMediaMetadata(
-                        MediaMetadata.Builder()
-                            .setTitle(playlist.name)
-                            .setIsBrowsable(true)
-                            .setIsPlayable(true)
-                            .build()
-                    )
-                    .build()
-                ,null
-            ))
-        }
-        if (id !is MediaId.Song) {
-            println("FAILURE not song")
-            return Futures.immediateFuture(LibraryResult.ofError(SessionError.ERROR_INVALID_STATE))
-        }
-        val song = runBlocking {
-            repo.getSongByName(id.selector)
-        }?:return Futures.immediateFuture(LibraryResult.ofError(SessionError.ERROR_INVALID_STATE))
-        return Futures.immediateFuture(
-            LibraryResult.ofItem(
-                MediaItem.Builder()
-                    .setUri(song.fileUri)
-                    .setMediaId(mediaId)
-                    .setMediaMetadata(
-                        MediaMetadata.Builder()
-                            .setTitle(song.name)
-                            .setArtist(song.artist.joinToString(", "))
-                            .setIsBrowsable(false)
-                            .setIsPlayable(true)
-                            .build()
-                    )
-                    .build()
-                ,null
-            )
-        )
+        return try { Futures.immediateFuture(LibraryResult.ofItem(id.getInstance(),null)) }
+        catch (_: IllegalStateException) { Futures.immediateFuture(LibraryResult.ofError(SessionError.ERROR_INVALID_STATE)) }
     }
 
     override fun onAddMediaItems(

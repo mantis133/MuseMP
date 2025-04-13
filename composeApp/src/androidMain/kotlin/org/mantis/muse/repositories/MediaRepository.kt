@@ -1,12 +1,9 @@
 package org.mantis.muse.repositories
 
 import android.database.sqlite.SQLiteConstraintException
-import android.util.Log
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
 import org.mantis.muse.storage.dao.ArtistDao
 import org.mantis.muse.storage.dao.ArtistSongRelationshipDao
 import org.mantis.muse.storage.dao.PlaylistDAO
@@ -46,6 +43,11 @@ class MediaRepository(
             )
         }
     }
+    val artistStream: Flow<List<Artist>> = artistDao.getAllArtists().map { artists ->
+        artists.map { artist ->
+            Artist(artist.name)
+        }
+    }
 
     @Transaction
     suspend fun getSongById(songId: Long): Song?{
@@ -71,7 +73,17 @@ class MediaRepository(
         )
     }
 
-    suspend fun getSongsByArtist(){}
+    suspend fun getArtistByName(artistName: String): Artist? {
+        val artistEnt = artistDao.getArtistByName(artistName)
+        return Artist(artistEnt.name)
+    }
+
+    @Transaction
+    suspend fun getSongsByArtistName(artistName: String): List<Song>{
+        val artistEntity = artistDao.getArtistByName(artistName)
+        return songDao.getSongsFromArtist(artistEntity.id)
+            .map { Song(it.name, artistDao.getArtistsBySong(it.id).map { it.name }, it.uri) }
+    }
 
     suspend fun getArtistsBySong(){}
 
