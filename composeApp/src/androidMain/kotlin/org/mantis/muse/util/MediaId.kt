@@ -1,5 +1,6 @@
 package org.mantis.muse.util
 
+import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import com.google.common.collect.ImmutableList
@@ -15,7 +16,7 @@ sealed class MediaId(val rep: String){
     val repo: MediaRepository by inject<MediaRepository>(MediaRepository::class.java)
 
     abstract fun getInstance(): MediaItem
-    abstract fun getChildren(): ImmutableList<MediaItem>
+    abstract fun getChildren(page: Int, pageSize: Int): ImmutableList<MediaItem>
 
     data object Root: MediaId("ROOT"){
         override fun getInstance(): MediaItem {
@@ -30,7 +31,7 @@ sealed class MediaId(val rep: String){
                 .build()
         }
 
-        override fun getChildren(): ImmutableList<MediaItem> {
+        override fun getChildren(page: Int, pageSize: Int): ImmutableList<MediaItem> {
             return listOf(
                 Folder.Playlists.getInstance(),
                 Folder.Songs.getInstance(),
@@ -49,7 +50,6 @@ sealed class MediaId(val rep: String){
             override val type: String = "ARTISTS"
         }
 
-
         abstract val type: String
 
         override fun getInstance(): MediaItem {
@@ -65,7 +65,7 @@ sealed class MediaId(val rep: String){
                 .build()
         }
 
-        override fun getChildren(): ImmutableList<MediaItem> {
+        override fun getChildren(page: Int, pageSize: Int): ImmutableList<MediaItem> {
             return when (this) {
                 Playlists ->
                     runBlocking {
@@ -106,7 +106,7 @@ sealed class MediaId(val rep: String){
                 .build()
         }
 
-        override fun getChildren(): ImmutableList<MediaItem> {
+        override fun getChildren(page: Int, pageSize: Int): ImmutableList<MediaItem> {
             return runBlocking{
                 repo.getSongsByPlaylist(this@Playlist.selector)
                     .map { song -> Song(song.name).getInstance() }
@@ -125,6 +125,7 @@ sealed class MediaId(val rep: String){
                             MediaMetadata.Builder()
                                 .setTitle(song.name)
                                 .setArtist(song.artist.joinToString(", "))
+//                                .setArtworkUri("haphazard".toUri())
                                 .setIsBrowsable(false)
                                 .setIsPlayable(true)
                                 .build()
@@ -133,7 +134,7 @@ sealed class MediaId(val rep: String){
 
         }
 
-        override fun getChildren(): ImmutableList<MediaItem> {
+        override fun getChildren(page: Int, pageSize: Int): ImmutableList<MediaItem> {
             return emptyList<MediaItem>() as ImmutableList<MediaItem>
         }
     }
@@ -154,7 +155,7 @@ sealed class MediaId(val rep: String){
                 .build()
         }
 
-        override fun getChildren(): ImmutableList<MediaItem> {
+        override fun getChildren(page: Int, pageSize: Int): ImmutableList<MediaItem> {
             return runBlocking{
                 repo.getSongsByArtistName(this@Artist.selector)
                     .map{ song -> Song(song.name).getInstance() }

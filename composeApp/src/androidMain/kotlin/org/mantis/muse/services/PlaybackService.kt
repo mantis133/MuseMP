@@ -77,6 +77,9 @@ class PlaybackService : MediaSessionService() {
         val player : ExoPlayer = ExoPlayer.Builder(this)
 
             .build()
+
+        player.addListener(PCallbacks(player))
+
         session = MediaLibrarySession.Builder(this, player, callbacks)
             .setId("MuseMP")
             .build()
@@ -144,7 +147,7 @@ class MLCallbacks(val repo: MediaRepository): MediaLibrarySession.Callback {
         params: LibraryParams?
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
         val id = parentId.toMuseMediaId()
-        val contents:List<MediaItem> = id.getChildren()
+        val contents:List<MediaItem> = id.getChildren(page, pageSize)
         return Futures.immediateFuture(
                 LibraryResult.ofItemList(contents, params)
         )
@@ -166,7 +169,7 @@ class MLCallbacks(val repo: MediaRepository): MediaLibrarySession.Callback {
         controller: MediaSession.ControllerInfo,
         mediaItems: List<MediaItem>
     ): ListenableFuture<List<MediaItem>> {
-        println("adding items")
+//        println("adding items")
         val fullMediaItems = mediaItems.map { mediaItem ->
             // Stupid dumb "security" conversion
             // when media items come across the veil into this function they lose their Uri property
@@ -204,7 +207,6 @@ class MLCallbacks(val repo: MediaRepository): MediaLibrarySession.Callback {
         println("ADDEDD"+ mediaSession.player.mediaItemCount)
         println("PLAYBACK" + songs.map{it.mediaId}.toString())
 //        println("ADDEDD"+ mediaSession.player.currentMediaItem)
-
         val recentItem =
         this.onGetItem(
             mediaSession as MediaLibrarySession,
@@ -224,3 +226,17 @@ class MLCallbacks(val repo: MediaRepository): MediaLibrarySession.Callback {
     }
 }
 
+class PCallbacks(player: ExoPlayer): Player.Listener {
+    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+        println("Shuffled")
+        if (shuffleModeEnabled) {
+
+        }
+//        super.onShuffleModeEnabledChanged(shuffleModeEnabled)
+    }
+
+    override fun onIsPlayingChanged(isPlaying: Boolean) {
+//        super.onIsPlayingChanged(isPlaying)
+        println("Pauses")
+    }
+}

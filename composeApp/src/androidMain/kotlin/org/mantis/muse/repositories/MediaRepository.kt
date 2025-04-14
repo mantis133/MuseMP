@@ -19,11 +19,11 @@ import org.mantis.muse.util.Playlist
 import org.mantis.muse.util.Song
 
 class MediaRepository(
-    val playlistDao: PlaylistDAO,
-    val songDao: SongDao,
-    val artistDao: ArtistDao,
-    val artistSongRelationshipDao: ArtistSongRelationshipDao,
-    val playlistSongRelationshipDao: PlaylistSongRelationshipDao
+    private val playlistDao: PlaylistDAO,
+    private val songDao: SongDao,
+    private val artistDao: ArtistDao,
+    private val artistSongRelationshipDao: ArtistSongRelationshipDao,
+    private val playlistSongRelationshipDao: PlaylistSongRelationshipDao
 ) {
     val playlistsStream: Flow<List<Playlist>> = playlistDao.getAllPlaylists().map { playlistEntities ->
         playlistEntities.map{ playlistEntity ->

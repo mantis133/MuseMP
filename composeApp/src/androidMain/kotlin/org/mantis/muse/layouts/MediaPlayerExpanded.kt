@@ -56,7 +56,7 @@ val pausePlayIconSize = 60.dp
 private fun PlayerUIPreview() {
     val bmh = BitmapFactory.decodeResource(LocalContext.current.resources, R.drawable.home_icon)
     ExpandedMediaPlayerUI(
-        "cool song", "badass artist", bmh.asImageBitmap(),0L, trackDurationMS = 10000L,
+        "cool song", "badass artist", { bmh.asImageBitmap() },0L, trackDurationMS = 10000L,
         playing = false,
         LoopState.None,
         shuffleState = true,
@@ -69,7 +69,7 @@ private fun PlayerUIPreview() {
 fun ExpandedMediaPlayerUI(
     songName: String,
     artistsName: String,
-    songThumbnail: ImageBitmap,
+    getSongThumbnail: () -> ImageBitmap,
     trackPosition: Long,
     trackDurationMS: Long,
     playing: Boolean,
@@ -93,7 +93,7 @@ fun ExpandedMediaPlayerUI(
                 .aspectRatio(1f)
         ){
             Image(
-                bitmap = songThumbnail,
+                bitmap = getSongThumbnail(),
                 contentDescription = null,
                 modifier = Modifier
                     .aspectRatio(1f)
@@ -142,16 +142,16 @@ fun ExpandedMediaPlayerUI(
             }
             Spacer(Modifier.height(30.dp))
             // Seekbar
-            var currentTime by remember { mutableFloatStateOf(trackPosition / 1000f) }
+            var currentTime = trackPosition / 1000f
 //            var currentTime = trackPosition / 1000f
-            val player = koinInject<AndroidMediaPlayer>()
-            LaunchedEffect(true) {
-                println("Launched Effect Started")
-                while (true) {
-                    currentTime = player.trackPositionMS / 1000f
-                    delay(1000L)
-                }
-            }
+//            val player = koinInject<AndroidMediaPlayer>()
+//            LaunchedEffect(true) {
+//                println("Launched Effect Started")
+//                while (true) {
+//                    currentTime = player.trackPositionMS / 1000f
+//                    delay(1000L)
+//                }
+//            }
             val totalTime = trackDurationMS / 1000f
             Slider(
                 value = currentTime,
