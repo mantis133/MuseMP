@@ -124,11 +124,11 @@ class MediaRepository(
         artistDao.insertArtists(ArtistEntity(0, artist.name, null, null))
     }
 
-    suspend fun addSongToPlaylist(playlist: Playlist, song: Song){
+    suspend fun addSongToPlaylist(playlist: Playlist, song: Song, position: Long){
         val playlistEntity = playlistDao.getPlaylistByName(playlist.name) ?: throw IllegalArgumentException("Playlist does not exist")
         val songEntity = songDao.getSongByName(song.name) ?: throw IllegalArgumentException("Song does not exist")
 
-        playlistSongRelationshipDao.insert(PlaylistSongEntryEntity(songEntity.id, playlistEntity.id))
+        playlistSongRelationshipDao.insert(PlaylistSongEntryEntity(songEntity.id, playlistEntity.id, position))
     }
 
     suspend fun removeSongFromPlaylist(){}

@@ -17,5 +17,5 @@ data class PlaylistSongEntryEntity(
     @ColumnInfo(index = true)
     val songId: Long,
     val playlistId: Long,
-//    val position: Long,
+    val position: Long,
 )

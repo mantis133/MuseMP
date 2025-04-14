@@ -19,7 +19,7 @@ interface SongDao {
     @Query("SELECT * FROM song WHERE id = :songId")
     suspend fun getSongById(songId: Long): SongEntity?
 
-    @Query("SELECT * FROM song WHERE id IN (SELECT songId FROM playlist_song_entry where playlistId = :playlistId)")
+    @Query("SELECT * FROM song S WHERE id IN (SELECT songId FROM playlist_song_entry where playlistId = :playlistId) ORDER BY (SELECT position FROM playlist_song_entry WHERE songId = S.id)")
     suspend fun getSongsInPlaylist(playlistId: Long): List<SongEntity>
 
     @Query("SELECT * FROM song WHERE id in (SELECT songId FROM artist_song_record WHERE artistId = :artistId)")

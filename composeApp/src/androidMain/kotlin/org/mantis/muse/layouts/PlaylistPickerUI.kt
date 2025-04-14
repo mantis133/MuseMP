@@ -1,6 +1,7 @@
 package org.mantis.muse.layouts
 
 import android.annotation.SuppressLint
+import androidx.annotation.OptIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -14,6 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.util.UnstableApi
 import org.koin.compose.viewmodel.koinViewModel
 import org.mantis.muse.viewmodels.PlaylistPickerViewModel
 import org.mantis.muse.viewmodels.PlaylistsScreenUiState
@@ -55,6 +57,7 @@ fun PlaylistScreenPreview() {
 }
 
 
+@OptIn(UnstableApi::class)
 @Composable
 fun PlaylistSelectionScreenState(
     viewModel: PlaylistPickerViewModel = koinViewModel<PlaylistPickerViewModel>(),
