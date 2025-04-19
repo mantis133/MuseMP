@@ -32,7 +32,8 @@ fun PlaylistScreenPreview() {
             Song("songName", listOf("artistName"), "filePath".toUri()),
             Song("songName2",listOf("artistName2"),"filePath2".toUri())
         ),
-        "".toUri()
+        "".toUri(),
+        null,
     )
     val playlist2 = Playlist(
         "cool list name2",
@@ -40,7 +41,8 @@ fun PlaylistScreenPreview() {
             Song("songName", listOf("artistName"), "filePath".toUri()),
             Song("songName3",listOf("artistName3"), "filePath3".toUri())
         ),
-        "".toUri()
+        "".toUri(),
+        null,
     )
     val playlist3 = Playlist(
         "cool list name3",
@@ -48,7 +50,8 @@ fun PlaylistScreenPreview() {
             Song("songName", listOf("artistName"), "filePath".toUri()),
             Song("songName3",listOf("artistName3"),"filePath3".toUri())
         ),
-        "".toUri()
+        "".toUri(),
+        null,
     )
     val playlists = listOf(playlist, playlist2,playlist3, playlist3,playlist2)
     MaterialTheme {

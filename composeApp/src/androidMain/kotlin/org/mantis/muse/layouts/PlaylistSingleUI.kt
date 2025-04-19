@@ -35,7 +35,8 @@ fun SinglePlaylistPreview(){
             Song("cool guy",listOf("cool guys2"), "".toUri()),
             Song("bad man",listOf("evil things"), "".toUri()),
         ),
-        "".toUri()
+        "".toUri(),
+        null,
     )
     PlaylistSingleUI(
         playlist = playlist,

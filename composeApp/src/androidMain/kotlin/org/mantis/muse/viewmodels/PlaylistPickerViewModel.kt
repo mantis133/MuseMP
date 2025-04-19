@@ -63,10 +63,11 @@ class PlaylistPickerViewModel(
         browser.addListener ({
             browser.get().apply {
                 clearMediaItems()
+                addMediaItem(browser.get().getItem("PLAYLIST"+playlist.name).get()?.value?:throw IllegalArgumentException("harahar"))
 //                addMediaItems(mediaSongs)
-                songs.forEach { song->
-                    addMediaItem(browser.get().getItem("SONG" + song.name).get()?.value?:throw IllegalArgumentException("harahar"))
-                }
+//                songs.forEach { song->
+//                    addMediaItem(browser.get().getItem("SONG" + song.name).get()?.value?:throw IllegalArgumentException("harahar"))
+//                }
                 prepare()
                 play()
             }

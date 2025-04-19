@@ -34,7 +34,8 @@ fun PlaylistCardPreview(
         Playlist(
             "cool name",
             listOf(),
-            "".toUri()
+            "".toUri(),
+            null,
         ),
     )
 }
@@ -59,7 +60,7 @@ fun PlaylistCard(
         ) {
             Image(
                 painter = if (cover != null) BitmapPainter(cover.asImageBitmap()) else painterResource(
-                    R.drawable.home_icon
+                    R.drawable.pause_button
                 ),
                 contentDescription = null,
                 modifier = Modifier

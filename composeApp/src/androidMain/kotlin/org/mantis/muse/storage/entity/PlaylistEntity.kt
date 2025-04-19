@@ -17,4 +17,5 @@ data class PlaylistEntity(
     @PrimaryKey(autoGenerate = true) val id: Long,
     val name: String,
     val fileUri: Uri,
+    val thumbnailUri: Uri?,
 )

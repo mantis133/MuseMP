@@ -52,31 +52,7 @@ class MainActivity : ComponentActivity() {
 
 //        val localFiles: LocalFileSource = get()
 //        val mediaRepository: MediaRepository = get()
-
-//        GlobalScope.launch(Dispatchers.IO){
-//            localFiles.localPlaylistFiles.collect { files ->
-//                val playlists = files.map {
-//                    Playlist(
-//                        it.nameWithoutExtension,
-//                        listOf(),
-//                        it.toUri()
-//                    )
-//                }.onEach { playlist -> mediaRepository.insertPlaylist(playlist) }
-//            }
-//            localFiles.localMp3Files.collect { files ->
-//                val songs = files
-//                    .map { fromFilePath(it.toUri()) }
-//                    .onEach { song -> mediaRepository.insertSong(song) }
-//            }
-//            mediaRepository.playlistsStream.collect { playlists ->
-//                playlists.onEach { playlist ->
-//                    val completePlaylist = Playlist.Companion.fromURI(playlist.fileURI)
-//                    completePlaylist.songList.forEach { song ->
-//                        mediaRepository.addSongToPlaylist(playlist, song)
-//                    }
-//                }
-//            }
-//        }
+//        reloadDB(get(), get())
 
         setContent {
             MuseTheme{
@@ -129,3 +105,26 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+fun reloadDB(localFiles: LocalFileSource, mediaRepository: MediaRepository){
+
+    GlobalScope.launch(Dispatchers.IO){
+        localFiles.localMp3Files.collect { files ->
+            val songs = files
+                .map { fromFilePath(it.toUri()) }
+                .onEach { song -> mediaRepository.insertSong(song) }
+        }
+        localFiles.localPlaylistFiles.collect { files ->
+            val playlists = files.map {
+                Playlist.Companion.fromURI(it.toUri())
+            }.onEach { playlist -> mediaRepository.insertPlaylist(playlist) }
+        }
+        mediaRepository.playlistsStream.collect { playlists ->
+            playlists.onEach { playlist ->
+                val completePlaylist = Playlist.Companion.fromURI(playlist.fileURI)
+                completePlaylist.songList.forEachIndexed { idx, song ->
+                    mediaRepository.addSongToPlaylist(playlist, song, idx.toLong())
+                }
+            }
+        }
+    }
+}

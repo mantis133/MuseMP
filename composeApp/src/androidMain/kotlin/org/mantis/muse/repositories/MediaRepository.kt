@@ -1,6 +1,7 @@
 package org.mantis.muse.repositories
 
 import android.database.sqlite.SQLiteConstraintException
+import androidx.core.net.toUri
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -8,29 +9,35 @@ import org.mantis.muse.storage.dao.ArtistDao
 import org.mantis.muse.storage.dao.ArtistSongRelationshipDao
 import org.mantis.muse.storage.dao.PlaylistDAO
 import org.mantis.muse.storage.dao.PlaylistSongRelationshipDao
+import org.mantis.muse.storage.dao.RecentlyPlayedDao
 import org.mantis.muse.storage.dao.SongDao
 import org.mantis.muse.storage.entity.ArtistEntity
 import org.mantis.muse.storage.entity.ArtistSongEntity
 import org.mantis.muse.storage.entity.PlaylistEntity
 import org.mantis.muse.storage.entity.PlaylistSongEntryEntity
+import org.mantis.muse.storage.entity.RecentlyPlayedEntity
 import org.mantis.muse.storage.entity.SongEntity
 import org.mantis.muse.util.Artist
+import org.mantis.muse.util.MediaId
 import org.mantis.muse.util.Playlist
 import org.mantis.muse.util.Song
+import org.mantis.muse.util.toId
 
 class MediaRepository(
     private val playlistDao: PlaylistDAO,
     private val songDao: SongDao,
     private val artistDao: ArtistDao,
     private val artistSongRelationshipDao: ArtistSongRelationshipDao,
-    private val playlistSongRelationshipDao: PlaylistSongRelationshipDao
+    private val playlistSongRelationshipDao: PlaylistSongRelationshipDao,
+    private val recentsDao: RecentlyPlayedDao
 ) {
     val playlistsStream: Flow<List<Playlist>> = playlistDao.getAllPlaylists().map { playlistEntities ->
         playlistEntities.map{ playlistEntity ->
             Playlist(
                 playlistEntity.name,
                 songDao.getSongsInPlaylist(playlistEntity.id).map { Song(it.name, artistDao.getArtistsBySong(it.id).map { it.name }, it.uri) },
-                playlistEntity.fileUri
+                playlistEntity.fileUri,
+                playlistEntity.thumbnailUri,
             )
         }
     }
@@ -69,7 +76,8 @@ class MediaRepository(
         return Playlist(
             playlistEntity.name,
             songDao.getSongsInPlaylist(playlistEntity.id).map { Song(it.name, artistDao.getArtistsBySong(it.id).map { it.name }, it.uri) },
-            playlistEntity.fileUri
+            playlistEntity.fileUri,
+            playlistEntity.thumbnailUri
         )
     }
 
@@ -99,7 +107,7 @@ class MediaRepository(
     }
 
     suspend fun insertPlaylist(playlist: Playlist) {
-        try{ playlistDao.insertPlaylists(PlaylistEntity(0, playlist.name, playlist.fileURI)) }
+        try{ playlistDao.insertPlaylists(PlaylistEntity(0, playlist.name, playlist.fileURI, playlist.thumbnailUri)) }
         catch (e: SQLiteConstraintException) {
             // TODO: More robust error handling.
             // runs when the unique constraints fail
@@ -136,4 +144,13 @@ class MediaRepository(
     suspend fun addArtistToSong(){}
 
     suspend fun removeArtistFromSong(){}
+
+    suspend fun setRecent(mediaId: MediaId, position: Long?) {
+        val ent = RecentlyPlayedEntity(1, mediaId.toId(), position)
+        recentsDao.insert(ent)
+    }
+
+    suspend fun getRecent(): RecentlyPlayedEntity {
+        return recentsDao.getId(1)
+    }
 }

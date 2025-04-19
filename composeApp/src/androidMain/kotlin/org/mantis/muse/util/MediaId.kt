@@ -108,9 +108,10 @@ sealed class MediaId(val rep: String){
 
         override fun getChildren(page: Int, pageSize: Int): ImmutableList<MediaItem> {
             return runBlocking{
-                repo.getSongsByPlaylist(this@Playlist.selector)
+                val items = repo.getSongsByPlaylist(this@Playlist.selector)
                     .map { song -> Song(song.name).getInstance() }
-            } as ImmutableList<MediaItem>
+                ImmutableList.copyOf(items)
+            }
         }
     }
     data class Song(val selector: String): MediaId("SONG"){
