@@ -25,11 +25,13 @@ navigationCompose = "2.8.4"
 media3Session = "1.4.1"
 media3Exoplayer = "1.4.1"
 roomCommon = "2.6.1"
+roomCompiler = "2.5.0"
 roomKtx = "2.6.1"
 datastoreCoreAndroid = "1.1.1"
 
 [libraries]
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCommon" }
+androidx-room-compiler-v250 = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomCommon" }
 androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled" }
 insert-koin-koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koinComposeVersion" }

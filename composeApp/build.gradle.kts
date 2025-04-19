@@ -119,13 +119,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.datastore.core.android)
     implementation(libs.androidx.lifecycle.viewmodel)
-
-//    commonMainImplementation(libs.room.runtime)
-//    commonMainImplementation(libs.androidx.sqlite.bundled)
-//    commonMainImplementation(kotlin("stdlib"))
-    ksp("androidx.room:room-compiler:2.5.0")
-//    kspAndroid(libs.androidx.room.compiler)
-//    add("kspJvm", project(":composeApp"))
+    ksp(libs.androidx.room.compiler.v250)
     debugImplementation(compose.uiTooling)
 
 }
