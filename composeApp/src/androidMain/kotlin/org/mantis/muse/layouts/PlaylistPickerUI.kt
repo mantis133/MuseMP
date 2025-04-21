@@ -16,12 +16,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
+import androidx.navigation.NavController
 import org.koin.compose.viewmodel.koinViewModel
+import org.mantis.muse.Screen
 import org.mantis.muse.viewmodels.PlaylistPickerViewModel
 import org.mantis.muse.viewmodels.PlaylistsScreenUiState
 import org.mantis.muse.layouts.components.PlaylistCard
 import org.mantis.muse.util.*
-import java.net.URI
 
 @Preview(showBackground = true, widthDp = 400, heightDp = 600)
 @Composable
@@ -63,11 +64,12 @@ fun PlaylistScreenPreview() {
 @OptIn(UnstableApi::class)
 @Composable
 fun PlaylistSelectionScreenState(
+    navController: NavController,
     viewModel: PlaylistPickerViewModel = koinViewModel<PlaylistPickerViewModel>(),
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    PlaylistSelectionScreenState(uiState = uiState, loadPlaylist = viewModel::loadPlaylist, modifier = modifier)
+    PlaylistSelectionScreenState(uiState = uiState, loadPlaylist = { playlist -> navController.navigate(Screen.SinglePlaylistViewScreen(playlist.name)) }, modifier = modifier)
 }
 
 @Composable
