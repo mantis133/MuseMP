@@ -103,6 +103,7 @@ fun ScrollableNavigation(
 @Composable
 fun HorizontalNavView(
     routes: List<Screen>,
+    selectedRouteIndex: Int,
     navHost: NavHostController,
     fontStyling: TextStyle,
     modifier: Modifier = Modifier,
@@ -118,7 +119,7 @@ fun HorizontalNavView(
         val textMeasurer = rememberTextMeasurer()
 
         var scrollOffset by remember { mutableFloatStateOf(canvasWidth / 2f - textMeasurer.measure(routeStrings[0], fontStyling).size.width/2f) }
-        var selectedIndex by remember { mutableIntStateOf(0) }
+        var selectedIndex by remember { mutableIntStateOf(selectedRouteIndex) }
 
         val trackLength = remember { routeStrings.map{textMeasurer.measure(it, fontStyling).size.width}.fold(0f){acc, route -> acc + route} + (routeStrings.size-1)*spacerSize }
         val routeMidPoints = remember {
@@ -127,6 +128,7 @@ fun HorizontalNavView(
                 .runningReduceIndexed { idx, acc, stringWidth -> acc + stringWidth + if (idx!=0)spacerSize else 0 }
                 .mapIndexed { idx, pos ->  pos - textMeasurer.measure(routeStrings[idx], fontStyling).size.width/2  }
         }
+        scrollOffset = (canvasWidth/2f) - routeMidPoints[selectedIndex]
 
         Canvas(
             Modifier

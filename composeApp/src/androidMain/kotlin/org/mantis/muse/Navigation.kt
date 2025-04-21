@@ -59,6 +59,7 @@ fun NavHostContainer(
                 ) {
                     HorizontalNavView(
                         navigableScreens,
+                        navigableScreens.indexOf(Screen.Home),
                         navHost = navController,
                         fontStyling = fontStyling,
                         modifier = Modifier
@@ -74,6 +75,7 @@ fun NavHostContainer(
                 ){
                     HorizontalNavView(
                         navigableScreens,
+                        navigableScreens.indexOf(Screen.PlaylistSelectionScreen),
                         navHost = navController,
                         fontStyling = fontStyling,
                         modifier = Modifier
@@ -94,6 +96,7 @@ fun NavHostContainer(
                 ) {
                     HorizontalNavView(
                         navigableScreens,
+                        navigableScreens.indexOf(Screen.SongSelectionScreen),
                         navHost = navController,
                         fontStyling = fontStyling,
                         modifier = Modifier
@@ -109,6 +112,7 @@ fun NavHostContainer(
                 ) {
                     HorizontalNavView(
                         navigableScreens,
+                        navigableScreens.indexOf(Screen.ArtistsScreen),
                         navHost = navController,
                         fontStyling = fontStyling,
                         modifier = Modifier
