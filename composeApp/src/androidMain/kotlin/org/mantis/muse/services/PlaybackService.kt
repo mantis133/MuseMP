@@ -5,74 +5,27 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.media.AudioDeviceInfo
-import android.os.Looper
+import android.os.Bundle
 import android.util.Log
-import android.view.Surface
-import android.view.SurfaceHolder
-import android.view.SurfaceView
-import android.view.TextureView
 import androidx.annotation.OptIn
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.AuxEffectInfo
-import androidx.media3.common.DeviceInfo
-import androidx.media3.common.Effect
-import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
-import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
-import androidx.media3.common.PriorityTaskManager
-import androidx.media3.common.Timeline
-import androidx.media3.common.TrackSelectionParameters
-import androidx.media3.common.Tracks
-import androidx.media3.common.VideoSize
-import androidx.media3.common.text.CueGroup
-import androidx.media3.common.util.Clock
-import androidx.media3.common.util.Size
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.DecoderCounters
-import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.PlayerMessage
-import androidx.media3.exoplayer.Renderer
-import androidx.media3.exoplayer.SeekParameters
-import androidx.media3.exoplayer.analytics.AnalyticsCollector
-import androidx.media3.exoplayer.analytics.AnalyticsListener
-import androidx.media3.exoplayer.image.ImageOutput
-import androidx.media3.exoplayer.source.MediaSource
-import androidx.media3.exoplayer.source.ShuffleOrder
-import androidx.media3.exoplayer.source.TrackGroupArray
-import androidx.media3.exoplayer.trackselection.TrackSelectionArray
-import androidx.media3.exoplayer.trackselection.TrackSelector
-import androidx.media3.exoplayer.video.VideoFrameMetadataListener
-import androidx.media3.exoplayer.video.spherical.CameraMotionListener
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaLibraryService.LibraryParams
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaSessionService
+import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
+import androidx.media3.session.SessionResult
 import androidx.room.Room
-import androidx.room.RoomDatabase
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.runBlocking
-import org.koin.android.ext.android.inject
-import org.koin.android.ext.koin.androidContext
-import org.koin.android.ext.koin.androidLogger
-import org.koin.core.context.GlobalContext
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.core.module.dsl.createdAtStart
-import org.koin.core.module.dsl.withOptions
-import org.koin.dsl.module
 import org.mantis.muse.repositories.MediaRepository
-import org.mantis.muse.repositories.PlaylistRepository
-import org.mantis.muse.repositories.SongRepository
-import org.mantis.muse.services.MLCallbacks
 import org.mantis.muse.storage.MusicCacheDB
 import org.mantis.muse.storage.dao.ArtistDao
 import org.mantis.muse.storage.dao.ArtistSongRelationshipDao
@@ -88,6 +41,7 @@ import java.lang.IllegalStateException
 class PlaybackService : MediaLibraryService() {
 
     private var session : MediaLibrarySession? = null
+    private lateinit var player : ExoPlayer
     private lateinit var db: MusicCacheDB
     private lateinit var playlistDao: PlaylistDAO
     private lateinit var songDao: SongDao
@@ -97,6 +51,26 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var recentDao: RecentlyPlayedDao
     private lateinit var mediaRepository: MediaRepository
     private lateinit var callbacks: MLCallbacks
+
+    val intentReceiver = object: BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action){
+                Intent.ACTION_HEADSET_PLUG -> {
+                    when(intent.getIntExtra("state",-1)){
+                        0 -> {/*headphones unplugged*/
+                            session?.player?.pause()
+                        }
+                        1 -> {/*headphones plugged in*/
+
+                        }
+                    }
+//                        session?.player?.pause()
+                    println("HEADPHONE ACTION")
+                }
+                
+            }
+        }
+    }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
         return session
@@ -124,27 +98,7 @@ class PlaybackService : MediaLibraryService() {
 
         Log.d("LOOK AT ME", "LOOK AT ME")
 
-        val intentReceiver = object: BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                when (intent?.action){
-                    Intent.ACTION_HEADSET_PLUG -> {
-//                        when(intent.getIntExtra("state",-1)){
-//                            0 -> {/*headphones unplugged*/
-//                                session?.player?.pause()
-//                            }
-//                            1 -> {/*headphones plugged in*/
-//
-//                            }
-//                            else ->{/*who the hell knows*/
-////                                Log.d(TAG, "change?")
-//                            }
-//                        }
-                        session?.player?.pause()
-                        println("HEADPHONE ACTION")
-                    }
-                }
-            }
-        }
+
 
 //        val likeButton = CommandButton.Builder()
 //            .setDisplayName("Like")
@@ -158,7 +112,7 @@ class PlaybackService : MediaLibraryService() {
 //            .build()
         
 
-        val player : ExoPlayer = ExoPlayer.Builder(this)
+        player = ExoPlayer.Builder(this)
 
             .build()
 
@@ -203,7 +157,7 @@ class PlaybackService : MediaLibraryService() {
             release()
             session = null
         }
-        stopKoin()
+        unregisterReceiver(intentReceiver)
         super.onDestroy()
     }
 }

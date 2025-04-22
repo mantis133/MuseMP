@@ -188,6 +188,10 @@ class MediaPlayerViewModel(
     }
 
 //    val mediaBrowser: ListenableFuture<MediaBrowser> by inject(MediaBrowser::class.java, qualifier = named("browserFuture"))
+    fun unloadSong(){
+        _mediaPlayerExpanded.update { MediaPlayerUIState.Empty }
+    }
+
     fun play(){
         mediaBrowser.get().play()
     }
