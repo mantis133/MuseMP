@@ -16,6 +16,7 @@ import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import org.mantis.muse.layouts.PlaylistInspector
 import org.mantis.muse.layouts.PlaylistSelectionScreenState
+import org.mantis.muse.layouts.SongPicker
 import org.mantis.muse.layouts.components.HorizontalNavView
 import org.mantis.muse.layouts.components.ScrollableNavigation
 import org.mantis.muse.util.Playlist
@@ -103,6 +104,7 @@ fun NavHostContainer(
                             .fillMaxHeight(0.1f)
                             .background(Color.Black)
                     )
+                    SongPicker(navController, Modifier)
                 }
             }
             composable<Screen.ArtistsScreen> {

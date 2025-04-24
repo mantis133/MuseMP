@@ -29,6 +29,7 @@ import org.mantis.muse.storage.MusicCacheDB
 import org.mantis.muse.util.AndroidMediaPlayer
 import org.mantis.muse.viewmodels.MediaPlayerViewModel
 import org.mantis.muse.viewmodels.PlaylistPickerViewModel
+import org.mantis.muse.viewmodels.SongPickerViewModel
 import java.io.File
 
 
@@ -84,6 +85,7 @@ class MainApplication: Application() {
                         // ViewModel instances
                         viewModel { MediaPlayerViewModel(get(), get()) }
                         viewModel { PlaylistPickerViewModel(get(),get()) }
+                        viewModel { SongPickerViewModel(get(),get()) }
                     }
                 )
             }
