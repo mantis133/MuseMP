@@ -26,7 +26,7 @@ import org.mantis.muse.storage.entity.SongEntity
         RecentlyPlayedEntity::class,
     ],
     exportSchema = false,
-    version = 4
+    version = 5
 )
 @TypeConverters(Converters::class)
 abstract class MusicCacheDB: RoomDatabase() {

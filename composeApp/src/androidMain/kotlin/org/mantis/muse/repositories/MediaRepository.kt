@@ -35,39 +35,38 @@ class MediaRepository(
         playlistEntities.map{ playlistEntity ->
             Playlist(
                 playlistEntity.name,
-                songDao.getSongsInPlaylist(playlistEntity.id).map { Song(it.name, artistDao.getArtistsBySong(it.id).map { it.name }, it.uri) },
+                songDao.getSongsInPlaylist(playlistEntity.id).map { Song(it,  artistDao.getArtistsBySong(it.id).map { it.name }) },
                 playlistEntity.fileUri,
                 playlistEntity.thumbnailUri,
             )
         }
     }
     val songsStream: Flow<List<Song>> = songDao.getAll().map { songs ->
-        songs.map { song ->
-            Song(
-                song.name,
-                artistDao.getArtistsBySong(song.id).map { artist -> artist.name },
-                song.uri
-            )
-        }
+        songs.map { song -> Song(song, artistDao.getArtistsBySong(song.id).map { artist -> artist.name }) }
     }
     val artistStream: Flow<List<Artist>> = artistDao.getAllArtists().map { artists ->
-        artists.map { artist ->
-            Artist(artist.name)
-        }
+        artists.map { artist -> Artist(artist.name) }
     }
 
     @Transaction
     suspend fun getSongById(songId: Long): Song?{
         val songEnt = songDao.getSongById(songId)?:return null
         val artists = artistDao.getArtistsBySong(songId).map{ artist -> Artist(artist.name) }.map{ it.name }
-        return Song(songEnt.name, artists, songEnt.uri)
+        return Song(songEnt, artists)
     }
 
     @Transaction
     suspend fun getSongByName(songName: String): Song? {
         val songEnt = songDao.getSongByName(songName)?:return null
         val artists = artistDao.getArtistsBySong(songEnt.id).map{ artist -> Artist(artist.name) }.map{ it.name }
-        return Song(songEnt.name, artists, songEnt.uri)
+        return Song(songEnt, artists)
+    }
+
+    @Transaction
+    suspend fun getSongByFilename(songFilename: String): Song? {
+        val songEnt = songDao.getSongByFilename(songFilename)?:return null
+        val artists = artistDao.getArtistsBySong(songEnt.id).map{ artist -> Artist(artist.name) }.map{ it.name }
+        return Song(songEnt, artists)
     }
 
     @Transaction
@@ -75,7 +74,7 @@ class MediaRepository(
         val playlistEntity = playlistDao.getPlaylistByName(playlistName)?:return null
         return Playlist(
             playlistEntity.name,
-            songDao.getSongsInPlaylist(playlistEntity.id).map { Song(it.name, artistDao.getArtistsBySong(it.id).map { it.name }, it.uri) },
+            songDao.getSongsInPlaylist(playlistEntity.id).map { Song(it, artistDao.getArtistsBySong(it.id).map { it.name }) },
             playlistEntity.fileUri,
             playlistEntity.thumbnailUri
         )
@@ -98,12 +97,12 @@ class MediaRepository(
     @Transaction
     suspend fun getSongsByPlaylist(playlistName: String): List<Song>{
         val playlistId = playlistDao.getPlaylistByName(playlistName)?.id
-        return songDao.getSongsInPlaylist(playlistId!!).map { Song(it.name, artistDao.getArtistsBySong(it.id).map { it.name }, it.uri) }
+        return songDao.getSongsInPlaylist(playlistId!!).map { Song(it, artistDao.getArtistsBySong(it.id).map { it.name }) }
     }
     @Transaction
     suspend fun getSongsByPlaylist(playlist: Playlist): List<Song>{
         val playlistId = playlistDao.getPlaylistByName(playlist.name)?.id
-        return songDao.getSongsInPlaylist(playlistId!!).map { Song(it.name, artistDao.getArtistsBySong(it.id).map { it.name }, it.uri) }
+        return songDao.getSongsInPlaylist(playlistId!!).map { Song(it, artistDao.getArtistsBySong(it.id).map { it.name }) }
     }
 
     suspend fun insertPlaylist(playlist: Playlist) {
@@ -117,7 +116,7 @@ class MediaRepository(
     @Transaction
     suspend fun insertSong(song: Song){
         try {
-            var songId = songDao.insertSongs(SongEntity(0, song.name, song.fileUri.path.toString(), song.fileUri))
+            var songId = songDao.insertSongs(SongEntity(0, song.name, song.fileName, song.fileUri))
             if (songId==-1L){ songId = songDao.getSongByName(song.name)!!.id }
             song.artist[0].split(", ").onEach { artistName ->
                 var artistId = artistDao.insertArtists(ArtistEntity(0, artistName, null, null))

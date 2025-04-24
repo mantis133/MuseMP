@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.compose.ui.graphics.ImageBitmap
@@ -61,17 +62,19 @@ fun Playlist.Companion.fromURI(fileURI: Uri): Playlist{
     val context by inject<Context>(Context::class.java)
 //    context.filesDir
     ContextCompat.getExternalFilesDirs(context, null)[1]
+    val mmr = MediaMetadataRetriever()
     playlistFile.readLines().forEach { line ->
         when {
             line.startsWith("#EXTIMG") -> {thumbnailUri = File(ContextCompat.getExternalFilesDirs(context, null)[1],line.removePrefix("#EXTIMG:").trim()).toUri()}
             line.startsWith("#") -> {}
             else -> {
                 val l = playlistFile.parent?.plus("/$line")?:line
-                songs.add(fromFilePath(File(l).toUri()))
+                songs.add(fromFilePath(mmr, File(l).toUri()))
             }
 //            else -> {songs.add(fromFilePath(playlistFile.parent?.plus("/$line")?:line))}
         }
     }
+    mmr.release()
 
     return Playlist(
         name = playlistFile.nameWithoutExtension,

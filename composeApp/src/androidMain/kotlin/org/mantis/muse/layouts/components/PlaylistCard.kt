@@ -45,8 +45,6 @@ fun PlaylistCard(
     playlist: Playlist,
     modifier: Modifier = Modifier
 ) {
-    val cover: Bitmap? = playlist.coverArt
-
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primary,
@@ -59,9 +57,9 @@ fun PlaylistCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Image(
-                painter = if (cover != null) BitmapPainter(cover.asImageBitmap()) else painterResource(
-                    R.drawable.pause_button
-                ),
+                painter =
+                    try { BitmapPainter(playlist.coverArt!!.asImageBitmap()) }
+                    catch(_: Exception) { painterResource(R.drawable.pause_button) },
                 contentDescription = null,
                 modifier = Modifier
                     .weight(1f)

@@ -4,17 +4,20 @@ import android.net.Uri
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import org.mantis.muse.util.Song
 
 @Entity(
     tableName = "song",
     indices = [
-        Index(value = ["name"], unique = true),
-        Index(value = ["uri"], unique = true)
+        Index(value = ["name"], unique = true)
     ]
 )
 data class SongEntity(
     @PrimaryKey(autoGenerate = true) val id: Long,
     val name: String,
-    val filename: String,
+    val fileName: String,
     val uri: Uri
-)
+) {
+    constructor(song: Song): this(0, song.name, song.fileName, song.fileUri)
+    constructor(id:Long, song: Song): this(id, song.name, song.fileName, song.fileUri)
+}
