@@ -116,7 +116,7 @@ class MediaRepository(
     @Transaction
     suspend fun insertSong(song: Song){
         try {
-            var songId = songDao.insertSongs(SongEntity(0, song.name, song.fileName, song.fileUri))
+            var songId = songDao.insertSongs(SongEntity(song))
             if (songId==-1L){ songId = songDao.getSongByName(song.name)!!.id }
             song.artist[0].split(", ").onEach { artistName ->
                 var artistId = artistDao.insertArtists(ArtistEntity(0, artistName, null, null))

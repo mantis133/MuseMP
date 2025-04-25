@@ -1,5 +1,6 @@
 package org.mantis.muse.layouts
 
+import android.annotation.SuppressLint
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -56,7 +57,7 @@ val pausePlayIconSize = 60.dp
 private fun PlayerUIPreview() {
     val bmh = BitmapFactory.decodeResource(LocalContext.current.resources, R.drawable.home_icon)
     ExpandedMediaPlayerUI(
-        "cool song", "badass artist", { bmh.asImageBitmap() },0L, trackDurationMS = 10000L,
+        "cool song", "badass artist", { bmh.asImageBitmap() },0L, trackDurationMS = 61000L,
         playing = false,
         LoopState.None,
         shuffleState = true,
@@ -260,10 +261,11 @@ fun ExpandedMediaPlayerUI(
     }
 }
 
+@SuppressLint("DefaultLocale")
 fun toMinSecRep(seconds: Float): String {
-val mins = seconds.toInt() / 60
-    val secs = seconds.toInt() % 60
-    val totalStringMins = mins.toString().format("%02d")
-    val totalStringSecs = secs.toString().format("%02d")
+    val mins = (seconds / 60).toInt()
+    val secs = (seconds % 60).toInt()
+    val totalStringMins = String.format("%02d", mins)
+    val totalStringSecs = String.format("%02d", secs)
     return "$totalStringMins:$totalStringSecs"
 }

@@ -59,6 +59,7 @@ data class PlayerUiState (
     val trackDuration: Long,
 
 )
+const val TEN_MINUTES: Long = (10*60*60*1000)
 
 @UnstableApi
 class MediaPlayerViewModel(
@@ -133,7 +134,6 @@ class MediaPlayerViewModel(
     }
 
     fun getTrackPosition(): Long {
-        println(mediaBrowser.get().currentPosition)
         return mediaBrowser.get().currentPosition
     }
 
@@ -166,7 +166,6 @@ class MediaPlayerViewModel(
                         shuffling = shuffleModeEnabled
                     )) }
                 }
-
                 override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
                     if (_mediaPlayerExpanded.value is MediaPlayerUIState.Empty) {
                         setLoadedSong()
@@ -177,7 +176,7 @@ class MediaPlayerViewModel(
                         _mediaPlayerExpanded.update { MediaPlayerUIState.LoadedSong(state.copy(
                             songTitle = mediaMetadata.title.toString(),
                             songArtists = mediaMetadata.artist.toString(),
-//                            trackDuration = mediaMetadata.durationMs!!,
+                            trackDuration = mediaMetadata.durationMs?:TEN_MINUTES,
                         )) }
                     }
                 }

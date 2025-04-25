@@ -15,9 +15,10 @@ import org.mantis.muse.util.Song
 data class SongEntity(
     @PrimaryKey(autoGenerate = true) val id: Long,
     val name: String,
+    val durationMs: Long,
     val fileName: String,
     val uri: Uri
 ) {
-    constructor(song: Song): this(0, song.name, song.fileName, song.fileUri)
-    constructor(id:Long, song: Song): this(id, song.name, song.fileName, song.fileUri)
+    constructor(song: Song): this(0, song.name, song.durationMs, song.fileName, song.fileUri)
+    constructor(id:Long, song: Song): this(id, song.name, song.durationMs, song.fileName, song.fileUri)
 }

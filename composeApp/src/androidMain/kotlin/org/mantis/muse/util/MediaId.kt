@@ -1,8 +1,10 @@
 package org.mantis.muse.util
 
+import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.util.UnstableApi
 import com.google.common.collect.ImmutableList
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -115,6 +117,7 @@ sealed class MediaId(val rep: String){
         }
     }
     data class Song(val selector: String): MediaId("SONG"){
+        @OptIn(UnstableApi::class)
         override fun getInstance(): MediaItem {
             val song = runBlocking {
                 repo.getSongByName(this@Song.selector)
@@ -126,6 +129,7 @@ sealed class MediaId(val rep: String){
                             MediaMetadata.Builder()
                                 .setTitle(song.name)
                                 .setArtist(song.artist.joinToString(", "))
+                                .setDurationMs(song.durationMs)
 //                                .setArtworkUri("haphazard".toUri())
                                 .setIsBrowsable(false)
                                 .setIsPlayable(true)

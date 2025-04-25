@@ -15,11 +15,12 @@ import java.io.File
 data class Song(
     val name: String,
     val artist: List<String>,
+    val durationMs: Long,
     val fileName: String,
     val fileUri: Uri
 ) {
-    constructor(name: String, artist: List<String>, fileUri: Uri): this(name, artist, "", fileUri)
-    constructor(songEntity: SongEntity, artists: List<String>): this(songEntity.name, artists, songEntity.fileName, songEntity.uri)
+    constructor(name: String, artist: List<String>, fileUri: Uri): this(name, artist, 0L, "", fileUri)
+    constructor(songEntity: SongEntity, artists: List<String>): this(songEntity.name, artists, songEntity.durationMs, songEntity.fileName, songEntity.uri)
 
     override fun toString(): String {
         return "$name, $artist, $fileUri"
@@ -48,7 +49,8 @@ fun fromFilePath(mmr: MediaMetadataRetriever, fileUri: Uri, context: Context = g
         null -> "Unknown"
         else -> a
     }
-    return Song(title, listOf(artists), fileUri.toFile().name, fileUri)
+    val durationMs = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong()
+    return Song(title, listOf(artists), durationMs!!, fileUri.toFile().name, fileUri)
 }
 
 //fun getAlbumCover() : Bitmap?{
