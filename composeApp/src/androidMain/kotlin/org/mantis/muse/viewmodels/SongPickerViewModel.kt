@@ -2,8 +2,10 @@ package org.mantis.muse.viewmodels
 
 import android.app.Application
 import android.content.ComponentName
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.Image
+import android.media.MediaMetadataRetriever
 import androidx.collection.LruCache
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -67,12 +69,47 @@ class SongPickerViewModel(
 
 
     fun getSongArt(song: Song): ImageBitmap {
-        if (imageCashe[song.name] == null) {
-            imageCashe.put(song.name, song.toAlbumArt()?.asImageBitmap()?:BitmapFactory.decodeResource(
-                context.resources,
-                R.drawable.home_icon
-            ).asImageBitmap())
+        return imageCashe[song.name]?: run {
+            val bitmap = try {
+                val mmr = MediaMetadataRetriever()
+                mmr.setDataSource(context, song.fileUri)
+                val data = mmr.embeddedPicture
+                mmr.release()
+
+                if (data != null) {
+                    val options = BitmapFactory.Options().apply {
+                        inJustDecodeBounds = true
+                    }
+                    BitmapFactory.decodeByteArray(data, 0, data.size, options)
+
+                    // Compute sample size for downscaling
+                    options.inSampleSize = calculateInSampleSize(options, 256, 256)
+                    options.inJustDecodeBounds = false
+                    options.inPreferredConfig = Bitmap.Config.RGB_565 // more memory-efficient
+
+                    BitmapFactory.decodeByteArray(data, 0, data.size, options)
+                } else null
+            } catch (e: Exception) {
+                null
+            } ?: BitmapFactory.decodeResource(context.resources, R.drawable.home_icon)
+
+            val imageBitmap = bitmap.asImageBitmap()
+            imageCashe.put(song.name, imageBitmap)
+            imageBitmap
         }
-        return imageCashe[song.name]!!
     }
+}
+
+fun calculateInSampleSize(
+    options: BitmapFactory.Options,
+    reqWidth: Int,
+    reqHeight: Int
+): Int {
+    val (height, width) = options.outHeight to options.outWidth
+    var inSampleSize = 1
+
+    while ((height / inSampleSize) >= reqHeight && (width / inSampleSize) >= reqWidth) {
+        inSampleSize *= 2
+    }
+    return inSampleSize
 }
