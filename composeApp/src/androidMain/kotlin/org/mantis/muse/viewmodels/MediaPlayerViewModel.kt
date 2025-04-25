@@ -140,15 +140,6 @@ class MediaPlayerViewModel(
     init{
         mediaBrowser.addListener({
             mediaBrowser.get().addListener(object: Player.Listener{
-//                    override fun onPlaybackStateChanged(playbackState: Int) {
-//                        super.onPlaybackStateChanged(playbackState)
-//                        if(playbackState == Player.STATE_READY) {
-////                            songPosition = conn!!.currentPosition.toInt()
-////                            Log.d("time", conn!!.currentPosition.toString())
-//
-//                        }
-//                    }
-
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
                     if (_mediaPlayerExpanded.value is MediaPlayerUIState.Empty) {
                         setLoadedSong()
@@ -167,6 +158,13 @@ class MediaPlayerViewModel(
                         Player.REPEAT_MODE_ONE -> _mediaPlayerExpanded.update { MediaPlayerUIState.LoadedSong(state.copy(loopState = LoopState.Single)) }
                         Player.REPEAT_MODE_ALL -> _mediaPlayerExpanded.update { MediaPlayerUIState.LoadedSong(state.copy(loopState = LoopState.Full)) }
                     }
+                }
+
+                override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                    val state = (_mediaPlayerExpanded.value as MediaPlayerUIState.LoadedSong).state
+                    _mediaPlayerExpanded.update { MediaPlayerUIState.LoadedSong(state.copy(
+                        shuffling = shuffleModeEnabled
+                    )) }
                 }
 
                 override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
@@ -217,7 +215,6 @@ class MediaPlayerViewModel(
     }
 
     fun skipLast(){
-        getArt()
         mediaBrowser.get().apply {
             seekToPrevious()
         }
@@ -232,8 +229,9 @@ class MediaPlayerViewModel(
     }
 
     fun toggleShuffle(){
-//        this.shuffling = !this.shuffling
-//        player.setShuffle(this.shuffling)
+        mediaBrowser.get().apply {
+            shuffleModeEnabled = !shuffleModeEnabled
+        }
     }
 
     fun nextLoopState(){
