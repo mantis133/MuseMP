@@ -99,7 +99,7 @@ fun MediaPlayerUI(
                                 .fillMaxSize()
                                 .padding(10.dp)
                         ) {
-//                            HorizontallyDismissible({viewModel.unloadSong()}){
+                            HorizontallyDismissible({viewModel.unloadSong()}){
                                 MinimisedMediaPlayerUI(
                                     image = viewModel.getArt(),
                                     songName = state.songTitle,
@@ -113,7 +113,7 @@ fun MediaPlayerUI(
                                         .height(100.dp)
                                         .clickable { viewModel.toggleExpansion() }
                                 )
-//                            }
+                            }
                         }
 
                     true ->
