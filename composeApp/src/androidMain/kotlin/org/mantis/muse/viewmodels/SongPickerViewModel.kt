@@ -65,6 +65,17 @@ class SongPickerViewModel(
         }, MoreExecutors.directExecutor())
     }
 
+    fun playSongs(songs: List<Song>) {
+        browser.addListener({
+            browser.get().apply {
+                clearMediaItems()
+                addMediaItems(songs.map { browser.get().getItem(MediaId.Song(it.name).toId()).get()?.value?:throw IllegalArgumentException("harahar") })
+                prepare()
+                play()
+            }
+        }, MoreExecutors.directExecutor())
+    }
+
     val imageCashe: LruCache<String, ImageBitmap> = LruCache<String, ImageBitmap>(100)
 
 

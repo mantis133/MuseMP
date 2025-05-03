@@ -54,7 +54,7 @@ fun SongPicker(
 ){
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
     SongPicker(
-        navController, uiState.value, viewModel::getSongArt, viewModel::playSong, modifier,
+        navController, uiState.value, viewModel::getSongArt, viewModel::playSong, viewModel::playSongs, modifier,
     )
 }
 
@@ -64,6 +64,7 @@ fun SongPicker(
     uiState: SongsScreenUiState,
     getSongArt: (Song) -> ImageBitmap?,
     playSong: (Song) -> Unit,
+    playSongs: (List<Song>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (uiState) {
@@ -73,6 +74,7 @@ fun SongPicker(
                 uiState.songs,
                 getSongArt,
                 playSong,
+                playSongs,
                 modifier
             )
         }
@@ -85,10 +87,11 @@ fun SongPicker(
     songs: List<Song>,
     getSongArt: (Song) -> ImageBitmap?,
     playSong: (Song) -> Unit,
+    playSongs: (List<Song>) -> Unit,
     modifier:Modifier = Modifier
 ) {
     var songSelectionMode by remember { mutableStateOf(false) }
-    var selectedSongs by remember { mutableStateOf(setOf<Song>()) }
+    var selectedSongs by remember { mutableStateOf(listOf<Song>()) }
 
     Box(
         contentAlignment = Alignment.BottomCenter,
@@ -106,10 +109,10 @@ fun SongPicker(
                     getSongArt(song),
                     Modifier
                         .combinedClickable(
-                            onClick = { if (songSelectionMode) selectedSongs = selectedSongs.toMutableSet().apply { add(song) } else playSong(song) },
+                            onClick = { if (songSelectionMode) selectedSongs = selectedSongs.toMutableList().apply { if (song in selectedSongs) remove(song) else add(song) } else playSong(song) },
                             onLongClick = {
                                 songSelectionMode = true
-                                selectedSongs = selectedSongs.toMutableSet().apply { add(song) }
+                                selectedSongs = selectedSongs.toMutableList().apply { add(song) }
                             }
                         )
                 )
@@ -131,8 +134,8 @@ fun SongPicker(
             SongSelectionModeTaskBar(
                 selectedSongs = selectedSongs,
                 editSongs = {},
-                playSongs = {},
-                onDismiss = {songSelectionMode = false; selectedSongs = setOf()},
+                playSongs = {playSongs(selectedSongs)},
+                onDismiss = {songSelectionMode = false; selectedSongs = listOf()},
                 modifier = Modifier
                     .fillMaxWidth()
                     .alpha(0.7f)
@@ -145,7 +148,7 @@ fun SongPicker(
 
 @Composable
 fun SongSelectionModeTaskBar(
-    selectedSongs: Set<Song>,
+    selectedSongs: List<Song>,
     editSongs: () -> Unit,
     playSongs: () -> Unit,
     onDismiss: () -> Unit,
