@@ -42,9 +42,9 @@ class MainApplication: Application() {
         Thread.setDefaultUncaughtExceptionHandler(CrashHandler(this))
         // Save Logcat logs to file
         val logFile = File(this.getExternalFilesDir(null), "logcat.txt")
-        Runtime.getRuntime().exec("logcat " +
-                "-f ${logFile.absolutePath}" +
-                "-r 10240" +
+        Runtime.getRuntime().exec("logcat" + " " +
+                "-f ${logFile.absolutePath}" + " " +
+                "-r 10240" + " " +
                 "-n 3"
         )
 
