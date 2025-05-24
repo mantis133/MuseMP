@@ -15,11 +15,13 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaBrowser
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.mantis.muse.R
 import org.mantis.muse.repositories.MediaRepository
 import org.mantis.muse.repositories.SongRepository
@@ -79,8 +81,8 @@ class SongPickerViewModel(
     val imageCashe: LruCache<String, ImageBitmap> = LruCache<String, ImageBitmap>(100)
 
 
-    fun getSongArt(song: Song): ImageBitmap {
-        return imageCashe[song.name]?: run {
+    suspend fun getSongArt(song: Song): ImageBitmap = withContext(Dispatchers.IO) {
+        imageCashe[song.name]?: run {
             val bitmap = try {
                 val mmr = MediaMetadataRetriever()
                 mmr.setDataSource(context, song.fileUri)

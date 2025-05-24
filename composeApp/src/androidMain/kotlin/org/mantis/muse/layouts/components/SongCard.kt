@@ -2,6 +2,7 @@ package org.mantis.muse.layouts.components
 
 import android.media.browse.MediaBrowser
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -35,7 +37,7 @@ import org.mantis.muse.util.toAlbumArt
 fun SongCard(
     songTitle: String,
     songArtist: String,
-    coverArt: ImageBitmap?,
+    coverArt: suspend () -> ImageBitmap,
     modifier: Modifier = Modifier
 ){
     Surface(
@@ -49,18 +51,14 @@ fun SongCard(
         Row(
             modifier = modifier
         ) {
-            val imagePainter = try {
-                BitmapPainter(coverArt!!)
-            } catch (_: Exception) {
-                painterResource(R.drawable.home_icon)
-            }
-            Image(
-                painter = imagePainter,
+            BufferedImage(
+                coverArt,
                 contentDescription = "Album cover of song: $songTitle",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(64.dp)
                     .clip(RoundedCornerShape(4.dp))
+                    .background(Color.Gray)
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column {
@@ -80,17 +78,17 @@ fun SongCard(
 }
 
 
-@Preview
-@Composable
-fun SongCardPreview(){
-    val exampleSong = Song(
-        "Orbit",
-        listOf("Good Kid"),
-        "NULL".toUri()
-    )
-    SongCard(
-        exampleSong.name,
-        exampleSong.artist.joinToString(", "),
-        null,
-    )
-}
+//@Preview
+//@Composable
+//fun SongCardPreview(){
+//    val exampleSong = Song(
+//        "Orbit",
+//        listOf("Good Kid"),
+//        "NULL".toUri()
+//    )
+//    SongCard(
+//        exampleSong.name,
+//        exampleSong.artist.joinToString(", "),
+//        null,
+//    )
+//}

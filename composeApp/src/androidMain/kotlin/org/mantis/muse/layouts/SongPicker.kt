@@ -62,7 +62,7 @@ fun SongPicker(
 fun SongPicker(
     navController: NavController,
     uiState: SongsScreenUiState,
-    getSongArt: (Song) -> ImageBitmap?,
+    getSongArt: suspend (Song) -> ImageBitmap,
     playSong: (Song) -> Unit,
     playSongs: (List<Song>) -> Unit,
     modifier: Modifier = Modifier,
@@ -85,7 +85,7 @@ fun SongPicker(
 @Composable
 fun SongPicker(
     songs: List<Song>,
-    getSongArt: (Song) -> ImageBitmap?,
+    getSongArt: suspend (Song) -> ImageBitmap,
     playSong: (Song) -> Unit,
     playSongs: (List<Song>) -> Unit,
     modifier:Modifier = Modifier
@@ -106,7 +106,7 @@ fun SongPicker(
                 SongCard(
                     song.name,
                     song.artist.joinToString(", "),
-                    getSongArt(song),
+                    { getSongArt(song) },
                     Modifier
                         .combinedClickable(
                             onClick = { if (songSelectionMode) selectedSongs = selectedSongs.toMutableList().apply { if (song in selectedSongs) remove(song) else add(song) } else playSong(song) },
@@ -177,7 +177,7 @@ fun SongSelectionModeTaskBarButton(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .alpha(1f)
-            .clickable{onClick()}
+            .clickable { onClick() }
     ) {
         Icon(
             painter,
