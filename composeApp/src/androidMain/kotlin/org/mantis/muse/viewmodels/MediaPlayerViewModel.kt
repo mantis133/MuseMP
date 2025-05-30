@@ -3,42 +3,24 @@ package org.mantis.muse.viewmodels
 import android.app.Application
 import android.content.ComponentName
 import android.graphics.BitmapFactory
-import android.media.Image
-import android.media.MediaMetadataRetriever
-import android.net.Uri
-import android.util.SparseArray
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.net.toFile
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaBrowser
-import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
-import org.koin.core.qualifier.named
-import org.koin.core.qualifier.qualifier
-import org.koin.java.KoinJavaComponent.inject
 import org.mantis.muse.R
 import org.mantis.muse.repositories.MediaRepository
 import org.mantis.muse.services.PlaybackService
-import org.mantis.muse.util.AndroidMediaPlayer
-import org.mantis.muse.util.AndroidMediaPlayerState
 import org.mantis.muse.util.LoopState
 import org.mantis.muse.util.MediaId
-import org.mantis.muse.util.Playlist
 import org.mantis.muse.util.Song
 import org.mantis.muse.util.toAlbumArt
 import org.mantis.muse.util.toMuseMediaId
@@ -245,6 +227,8 @@ class MediaPlayerViewModel(
     }
 
     fun seekTo(position: Long) {
-//        player.trackPositionMS = position
+        mediaBrowser.get().apply {
+            seekTo(position)
+        }
     }
 }
