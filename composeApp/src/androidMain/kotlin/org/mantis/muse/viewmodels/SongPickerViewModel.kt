@@ -43,6 +43,8 @@ class SongPickerViewModel(
     private val mediaRepository: MediaRepository,
     private val context: Application
 ): ViewModel() {
+    val imageCashe: LruCache<String, ImageBitmap> = LruCache<String, ImageBitmap>(100)
+
     private val browser = MediaBrowser.Builder(
         context,
         SessionToken(context, ComponentName(context, PlaybackService::class.java)),
@@ -78,7 +80,6 @@ class SongPickerViewModel(
         }, MoreExecutors.directExecutor())
     }
 
-    val imageCashe: LruCache<String, ImageBitmap> = LruCache<String, ImageBitmap>(100)
 
 
     suspend fun getSongArt(song: Song): ImageBitmap = withContext(Dispatchers.IO) {

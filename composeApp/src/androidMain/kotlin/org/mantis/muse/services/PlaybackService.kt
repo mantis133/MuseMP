@@ -116,7 +116,7 @@ class PlaybackService : MediaLibraryService() {
 
             .build()
 
-        player.addListener(PCallbacks(mediaRepository))
+        player.addListener(PCallbacks(mediaRepository, player))
 
         session = MediaLibrarySession.Builder(this, player, callbacks)
             .setId("MuseMP")
@@ -290,7 +290,7 @@ class MLCallbacks(val repo: MediaRepository): MediaLibrarySession.Callback {
     }
 }
 
-class PCallbacks(private val repo: MediaRepository): Player.Listener {
+class PCallbacks(private val repo: MediaRepository, private val player: Player): Player.Listener {
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
 //        super.onMediaItemTransition(mediaItem, reason)
 
@@ -310,7 +310,10 @@ class PCallbacks(private val repo: MediaRepository): Player.Listener {
 
             Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> {
                 val (_, mid, pos) = runBlocking{ repo.getRecent() }
-                runBlocking{ repo.setRecent(mid.toMuseMediaId(), pos?.plus(1)) }
+                val direction = pos?.minus(player.currentMediaItemIndex)?.times(-1)
+                runBlocking{
+                    repo.setRecent(mid.toMuseMediaId(), pos?.plus(direction?:0))
+                }
             }
         }
     }
