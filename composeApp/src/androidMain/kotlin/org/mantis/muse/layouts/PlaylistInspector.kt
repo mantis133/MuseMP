@@ -44,8 +44,11 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.koin.compose.viewmodel.koinViewModel
 import org.mantis.muse.R
+import org.mantis.muse.layouts.components.BufferedImage
 import org.mantis.muse.layouts.theme.MuseTheme
 import org.mantis.muse.util.Playlist
 import org.mantis.muse.util.Song
@@ -104,14 +107,15 @@ fun PlaylistInspector(
     ) {
         val h1 = maxHeight
         val w1 = maxWidth
-        val image: ImageBitmap = try {
-            playlist.coverArt!!.asImageBitmap()
-        } catch (_: Exception) {
-            val res = LocalContext.current.resources
-            BitmapFactory.decodeResource(res, R.drawable.home_icon).asImageBitmap()
-        }
-        Image(
-            bitmap = image,
+        val res = LocalContext.current.resources
+        BufferedImage(
+            imageProvider = {
+                try {
+                    playlist.coverArt!!.asImageBitmap()
+                } catch (_: Exception) {
+                    BitmapFactory.decodeResource(res, R.drawable.home_icon).asImageBitmap()
+                }
+            },
             contentDescription = null,
             contentScale = ContentScale.Inside,
             modifier = Modifier
@@ -163,12 +167,16 @@ fun PlaylistInspector(
                                 .padding(10.dp)
                                 .height(80.dp)
                         ){
-                            Image(
-                                bitmap = try {
-                                    song.toAlbumArt()!!.asImageBitmap()
-                                } catch (_: Exception) {
-                                    val res = LocalContext.current.resources
-                                    BitmapFactory.decodeResource(res, R.drawable.home_icon).asImageBitmap()
+                            BufferedImage(
+                                imageProvider = {
+                                    withContext(Dispatchers.IO) {
+                                        try {
+                                            song.toAlbumArt()!!.asImageBitmap()
+                                        } catch (_: Exception) {
+                                            BitmapFactory.decodeResource(res, R.drawable.home_icon)
+                                                .asImageBitmap()
+                                        }
+                                    }
                                 },
                                 contentDescription = null,
                             )
@@ -185,9 +193,9 @@ fun PlaylistInspector(
             painter = painterResource(R.drawable.baseline_arrow_back_24),
             contentDescription = null,
             modifier = Modifier
-                .clickable{navigateBack()}
+                .clickable { navigateBack() }
                 .padding(10.dp)
-                .size(w1/10)
+                .size(w1 / 10)
         )
     }
 }
