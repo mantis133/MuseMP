@@ -138,7 +138,14 @@ class MediaRepository(
         playlistSongRelationshipDao.insert(PlaylistSongEntryEntity(songEntity.id, playlistEntity.id, position))
     }
 
-    suspend fun removeSongFromPlaylist(){}
+    @Transaction
+    @Throws(IllegalArgumentException::class)
+    suspend fun removeSongFromPlaylist(playlist: Playlist, song: Song, position: Long){
+        val playlistEntity = playlistDao.getPlaylistByName(playlist.name) ?: throw IllegalArgumentException("Playlist does not exist")
+        val songEntity = songDao.getSongByName(song.name) ?: throw IllegalArgumentException("Song does not exist")
+
+        playlistSongRelationshipDao.delete(PlaylistSongEntryEntity(songEntity.id, playlistEntity.id, position))
+    }
 
     suspend fun addArtistToSong(){}
 

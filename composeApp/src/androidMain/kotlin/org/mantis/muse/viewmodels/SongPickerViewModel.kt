@@ -15,12 +15,15 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaBrowser
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.mantis.muse.R
 import org.mantis.muse.repositories.MediaRepository
@@ -70,10 +73,19 @@ class SongPickerViewModel(
     }
 
     fun playSongs(songs: List<Song>) {
+        val queuePlaylist: Playlist = runBlocking{ mediaRepository.getPlaylistByName("Queue") }!!
+        viewModelScope.launch(Dispatchers.IO) {
+            queuePlaylist.songList.forEachIndexed { idx, song ->
+                mediaRepository.removeSongFromPlaylist(queuePlaylist, song, idx.toLong())
+            }
+            songs.forEachIndexed { idx, song ->
+                mediaRepository.addSongToPlaylist(queuePlaylist, song, idx.toLong())
+            }
+        }
         browser.addListener({
             browser.get().apply {
                 clearMediaItems()
-                addMediaItems(songs.map { browser.get().getItem(MediaId.Song(it.name).toId()).get()?.value?:throw IllegalArgumentException("harahar") })
+                addMediaItem(browser.get().getItem("PLAYLISTQueue").get()?.value?:throw IllegalArgumentException("harahar"))
                 prepare()
                 play()
             }
