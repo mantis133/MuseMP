@@ -18,6 +18,7 @@ import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -73,23 +74,28 @@ class SongPickerViewModel(
     }
 
     fun playSongs(songs: List<Song>) {
-        val queuePlaylist: Playlist = runBlocking{ mediaRepository.getPlaylistByName("Queue") }!!
         viewModelScope.launch(Dispatchers.IO) {
+            val queuePlaylist: Playlist = mediaRepository.getPlaylistByName("Queue")!! // TODO: safe
             queuePlaylist.songList.forEachIndexed { idx, song ->
                 mediaRepository.removeSongFromPlaylist(queuePlaylist, song, idx.toLong())
             }
             songs.forEachIndexed { idx, song ->
                 mediaRepository.addSongToPlaylist(queuePlaylist, song, idx.toLong())
             }
-        }
-        browser.addListener({
-            browser.get().apply {
-                clearMediaItems()
-                addMediaItem(browser.get().getItem("PLAYLISTQueue").get()?.value?:throw IllegalArgumentException("harahar"))
-                prepare()
-                play()
+            withContext(Dispatchers.Main){
+                browser.addListener({
+                    browser.get().apply {
+                        clearMediaItems()
+                        addMediaItem(
+                            browser.get().getItem("PLAYLISTQueue").get()?.value
+                                ?: throw IllegalArgumentException("harahar")
+                        )
+                        prepare()
+                        play()
+                    }
+                }, MoreExecutors.directExecutor())
             }
-        }, MoreExecutors.directExecutor())
+        }
     }
 
 

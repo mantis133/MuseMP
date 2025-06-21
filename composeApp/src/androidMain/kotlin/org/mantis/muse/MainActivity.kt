@@ -127,6 +127,9 @@ suspend fun cleanDB(playlistDAO: PlaylistDAO, songDao: SongDao, artistDao: Artis
 }
 
 suspend fun reloadDB(localFiles: LocalFileSource, songDao: SongDao, mediaRepository: MediaRepository, context: Context){
+
+    // There is a crash when searching for a non existent file when adding songs from playlist
+
     val mmr = MediaMetadataRetriever()
     localFiles.localMp3Files.collect { files ->
         val songs = files
