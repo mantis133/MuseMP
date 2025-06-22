@@ -28,6 +28,7 @@ import org.mantis.muse.storage.LocalFileSource
 import org.mantis.muse.storage.MusicCacheDB
 import org.mantis.muse.util.AndroidMediaPlayer
 import org.mantis.muse.viewmodels.MediaPlayerViewModel
+import org.mantis.muse.viewmodels.PlaylistCreationViewModel
 import org.mantis.muse.viewmodels.PlaylistPickerViewModel
 import org.mantis.muse.viewmodels.SongPickerViewModel
 import java.io.File
@@ -59,11 +60,16 @@ class MainApplication: Application() {
                         single { AndroidMediaPlayer(null, get()) }
 
                         // physical storage location instances
-                        single { Room.databaseBuilder(
-                            context = get(),
-                            klass = MusicCacheDB::class.java,
-                            name = "MusicCache"
-                        ).enableMultiInstanceInvalidation().fallbackToDestructiveMigration().build()
+                        single {
+                            Room
+                                .databaseBuilder(
+                                    context = get(),
+                                    klass = MusicCacheDB::class.java,
+                                    name = "MusicCache"
+                                )
+                                .enableMultiInstanceInvalidation()
+                                .fallbackToDestructiveMigration()
+                                .build()
                         } withOptions {
                             createdAtStart()
                         }
@@ -86,6 +92,7 @@ class MainApplication: Application() {
                         viewModel { MediaPlayerViewModel(get(), get()) }
                         viewModel { PlaylistPickerViewModel(get(),get()) }
                         viewModel { SongPickerViewModel(get(),get()) }
+                        viewModel { PlaylistCreationViewModel(get()) }
                     }
                 )
             }

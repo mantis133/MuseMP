@@ -52,11 +52,3 @@ fun fromFilePath(mmr: MediaMetadataRetriever, fileUri: Uri, context: Context = g
     val durationMs = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong()
     return Song(title, listOf(artists), durationMs!!, fileUri.toFile().name, fileUri)
 }
-
-//fun getAlbumCover() : Bitmap?{
-//    val file = File(this.path)
-//    val mmr = MediaMetadataRetriever()
-//    mmr.setDataSource(file.path)
-//    return if (mmr.embeddedPicture != null) {
-//        BitmapFactory.decodeByteArray(mmr.embeddedPicture, 0, mmr.embeddedPicture!!.size)} else {null}
-//}

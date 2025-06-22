@@ -87,8 +87,7 @@ class SongPickerViewModel(
                     browser.get().apply {
                         clearMediaItems()
                         addMediaItem(
-                            browser.get().getItem("PLAYLISTQueue").get()?.value
-                                ?: throw IllegalArgumentException("harahar")
+                            browser.get().getItem("PLAYLISTQueue").get()?.value!! // TODO: safe
                         )
                         prepare()
                         play()

@@ -40,6 +40,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import org.koin.compose.viewmodel.koinViewModel
 import org.mantis.muse.R
+import org.mantis.muse.Screen
 import org.mantis.muse.layouts.components.SongCard
 import org.mantis.muse.util.Song
 import org.mantis.muse.viewmodels.SongPickerViewModel
@@ -54,17 +55,19 @@ fun SongPicker(
 ){
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
     SongPicker(
-        navController, uiState.value, viewModel::getSongArt, viewModel::playSong, viewModel::playSongs, modifier,
+        uiState.value, viewModel::getSongArt, viewModel::playSong, viewModel::playSongs,
+        addSongsToPlaylist = {songs -> navController.navigate(Screen.AddSongsToPlaylistScreen(songs.map { it.name }))},
+        modifier,
     )
 }
 
 @Composable
 fun SongPicker(
-    navController: NavController,
     uiState: SongsScreenUiState,
     getSongArt: suspend (Song) -> ImageBitmap,
     playSong: (Song) -> Unit,
     playSongs: (List<Song>) -> Unit,
+    addSongsToPlaylist: (List<Song>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (uiState) {
@@ -75,6 +78,7 @@ fun SongPicker(
                 getSongArt,
                 playSong,
                 playSongs,
+                addSongsToPlaylist,
                 modifier
             )
         }
@@ -88,6 +92,7 @@ fun SongPicker(
     getSongArt: suspend (Song) -> ImageBitmap,
     playSong: (Song) -> Unit,
     playSongs: (List<Song>) -> Unit,
+    addSongsToPlaylist: (List<Song>) -> Unit,
     modifier:Modifier = Modifier
 ) {
     var songSelectionMode by remember { mutableStateOf(false) }
@@ -133,7 +138,7 @@ fun SongPicker(
         if (songSelectionMode) {
             SongSelectionModeTaskBar(
                 selectedSongs = selectedSongs,
-                editSongs = {},
+                addSongsToPlaylist = { addSongsToPlaylist(selectedSongs) },
                 playSongs = {playSongs(selectedSongs)},
                 onDismiss = {songSelectionMode = false; selectedSongs = listOf()},
                 modifier = Modifier
@@ -149,7 +154,7 @@ fun SongPicker(
 @Composable
 fun SongSelectionModeTaskBar(
     selectedSongs: List<Song>,
-    editSongs: () -> Unit,
+    addSongsToPlaylist: () -> Unit,
     playSongs: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -159,7 +164,7 @@ fun SongSelectionModeTaskBar(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
     ) {
-        SongSelectionModeTaskBarButton(if (selectedSongs.size > 1) "Batch Edit" else "Edit", editSongs, painterResource(R.drawable.edit_icon), null)
+        SongSelectionModeTaskBarButton("Add to Playlist", addSongsToPlaylist, painterResource(R.drawable.outline_add_24), null)
         SongSelectionModeTaskBarButton("Play Songs", playSongs, painterResource(R.drawable.play_arrow), null)
         SongSelectionModeTaskBarButton("Dismiss", onDismiss, painterResource(R.drawable.baseline_arrow_back_24), null)
     }

@@ -14,12 +14,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
+import org.mantis.muse.layouts.AddToPlaylistUI
 import org.mantis.muse.layouts.PlaylistInspector
 import org.mantis.muse.layouts.PlaylistSelectionScreenState
 import org.mantis.muse.layouts.SongPicker
 import org.mantis.muse.layouts.components.HorizontalNavView
 import org.mantis.muse.layouts.components.ScrollableNavigation
 import org.mantis.muse.util.Playlist
+import org.mantis.muse.util.Song
 
 @Serializable sealed class Screen(val display: String) {
     @Serializable data object Home: Screen("Home")
@@ -28,6 +30,7 @@ import org.mantis.muse.util.Playlist
     @Serializable data class SinglePlaylistViewScreen(val playlistName: String): Screen("")
     @Serializable data object SongSelectionScreen : Screen("Songs")
     @Serializable data object ArtistsScreen : Screen("Artists")
+    @Serializable data class AddSongsToPlaylistScreen(val songs: List<String>): Screen("")
 }
 
 @Composable
@@ -127,6 +130,12 @@ fun NavHostContainer(
                 val playlistView: Screen.SinglePlaylistViewScreen = backStackEntry.toRoute()
                 val playlistName: String = playlistView.playlistName
                 PlaylistInspector(playlistName, navController)
+            }
+            composable<Screen.AddSongsToPlaylistScreen> { backStackEntry ->
+                val view: Screen.AddSongsToPlaylistScreen = backStackEntry.toRoute()
+                val songNames: List<String> = view.songs
+
+                AddToPlaylistUI(songNames, navController)
             }
         }
     }
