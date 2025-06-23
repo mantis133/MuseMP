@@ -29,7 +29,7 @@ interface SongDao {
         WHERE PSE.playlistId = :playlistId
         ORDER BY PSE.position
     """)
-    suspend fun getSongsInPlaylist(playlistId: Long): List<SongEntity>
+    fun getSongsInPlaylist(playlistId: Long): Flow<List<SongEntity>>
 
     @Query("SELECT * FROM song WHERE id in (SELECT songId FROM artist_song_record WHERE artistId = :artistId)")
     suspend fun getSongsFromArtist(artistId: Long): List<SongEntity>

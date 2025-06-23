@@ -3,7 +3,12 @@ package org.mantis.muse.repositories
 import android.database.sqlite.SQLiteConstraintException
 import androidx.core.net.toUri
 import androidx.room.Transaction
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import org.mantis.muse.storage.dao.ArtistDao
 import org.mantis.muse.storage.dao.ArtistSongRelationshipDao
@@ -35,14 +40,14 @@ class MediaRepository(
         playlistEntities.map{ playlistEntity ->
             Playlist(
                 playlistEntity.name,
-                songDao.getSongsInPlaylist(playlistEntity.id).map { Song(it,  artistDao.getArtistsBySong(it.id).map { it.name }) },
+                songDao.getSongsInPlaylist(playlistEntity.id).first().map { Song(it,  artistDao.getArtistsBySong(it.id).first().map { it.name }) },
                 playlistEntity.fileUri,
                 playlistEntity.thumbnailUri,
             )
         }
     }
     val songsStream: Flow<List<Song>> = songDao.getAll().map { songs ->
-        songs.map { song -> Song(song, artistDao.getArtistsBySong(song.id).map { artist -> artist.name }) }
+        songs.map { song -> Song(song, artistDao.getArtistsBySong(song.id).first().map { artist -> artist.name }) }
     }
     val artistStream: Flow<List<Artist>> = artistDao.getAllArtists().map { artists ->
         artists.map { artist -> Artist(artist.name) }
@@ -51,34 +56,51 @@ class MediaRepository(
     @Transaction
     suspend fun getSongById(songId: Long): Song?{
         val songEnt = songDao.getSongById(songId)?:return null
-        val artists = artistDao.getArtistsBySong(songId).map{ artist -> Artist(artist.name) }.map{ it.name }
+        val artists = artistDao.getArtistsBySong(songId).first().map{ artist -> Artist(artist.name) }.map{ it.name }
         return Song(songEnt, artists)
     }
 
     @Transaction
     suspend fun getSongByName(songName: String): Song? {
         val songEnt = songDao.getSongByName(songName)?:return null
-        val artists = artistDao.getArtistsBySong(songEnt.id).map{ artist -> Artist(artist.name) }.map{ it.name }
+        val artists = artistDao.getArtistsBySong(songEnt.id).first().map{ artist -> Artist(artist.name) }.map{ it.name }
         return Song(songEnt, artists)
     }
 
     @Transaction
     suspend fun getSongByFilename(songFilename: String): Song? {
         val songEnt = songDao.getSongByFilename(songFilename)?:return null
-        val artists = artistDao.getArtistsBySong(songEnt.id).map{ artist -> Artist(artist.name) }.map{ it.name }
+        val artists = artistDao.getArtistsBySong(songEnt.id).first().map{ artist -> Artist(artist.name) }.map{ it.name }
         return Song(songEnt, artists)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Transaction
-    suspend fun getPlaylistByName(playlistName: String): Playlist? {
-        val playlistEntity = playlistDao.getPlaylistByName(playlistName)?:return null
-        return Playlist(
-            playlistEntity.name,
-            songDao.getSongsInPlaylist(playlistEntity.id).map { Song(it, artistDao.getArtistsBySong(it.id).map { it.name }) },
-            playlistEntity.fileUri,
-            playlistEntity.thumbnailUri
-        )
-    }
+    fun getPlaylistByName(playlistName: String): Flow<Playlist?> =
+        playlistDao.getPlaylistByName(playlistName).flatMapLatest{ playlistEntity ->
+            if (playlistEntity == null) return@flatMapLatest flowOf(null)
+            songDao.getSongsInPlaylist(playlistEntity.id).flatMapLatest { songs ->
+                val songsWithArtists = songs.map { song ->
+                    artistDao.getArtistsBySong(song.id).map { artistEntities ->
+                        Song(
+                            song,
+                            artistEntities.map{it.name}
+                        )
+                    }
+                }
+
+                combine(
+                    songsWithArtists
+                ) { songs ->
+                    Playlist(
+                        playlistEntity.name,
+                        songs.toList(),
+                        playlistEntity.fileUri,
+                        playlistEntity.thumbnailUri
+                    )
+                }
+            }
+        }
 
     suspend fun getArtistByName(artistName: String): Artist? {
         val artistEnt = artistDao.getArtistByName(artistName)
@@ -89,20 +111,20 @@ class MediaRepository(
     suspend fun getSongsByArtistName(artistName: String): List<Song>{
         val artistEntity = artistDao.getArtistByName(artistName)
         return songDao.getSongsFromArtist(artistEntity.id)
-            .map { Song(it.name, artistDao.getArtistsBySong(it.id).map { it.name }, it.uri) }
+            .map { Song(it.name, artistDao.getArtistsBySong(it.id).first().map { it.name }, it.uri) }
     }
 
     suspend fun getArtistsBySong(){}
 
     @Transaction
     suspend fun getSongsByPlaylist(playlistName: String): List<Song>{
-        val playlistId = playlistDao.getPlaylistByName(playlistName)?.id
-        return songDao.getSongsInPlaylist(playlistId!!).map { Song(it, artistDao.getArtistsBySong(it.id).map { it.name }) }
+        val playlistId = playlistDao.getPlaylistByName(playlistName).first()?.id
+        return songDao.getSongsInPlaylist(playlistId!!).first().map { Song(it, artistDao.getArtistsBySong(it.id).first().map { it.name }) }
     }
     @Transaction
     suspend fun getSongsByPlaylist(playlist: Playlist): List<Song>{
-        val playlistId = playlistDao.getPlaylistByName(playlist.name)?.id
-        return songDao.getSongsInPlaylist(playlistId!!).map { Song(it, artistDao.getArtistsBySong(it.id).map { it.name }) }
+        val playlistId = playlistDao.getPlaylistByName(playlist.name).first()?.id
+        return songDao.getSongsInPlaylist(playlistId!!).first().map { Song(it, artistDao.getArtistsBySong(it.id).first().map { it.name }) }
     }
 
     suspend fun insertPlaylist(playlist: Playlist) {
@@ -132,7 +154,7 @@ class MediaRepository(
     }
 
     suspend fun addSongToPlaylist(playlist: Playlist, song: Song, position: Long){
-        val playlistEntity = playlistDao.getPlaylistByName(playlist.name) ?: throw IllegalArgumentException("Playlist does not exist")
+        val playlistEntity = playlistDao.getPlaylistByName(playlist.name).first() ?: throw IllegalArgumentException("Playlist does not exist")
         val songEntity = songDao.getSongByName(song.name) ?: throw IllegalArgumentException("Song does not exist")
 
         playlistSongRelationshipDao.insert(PlaylistSongEntryEntity(songEntity.id, playlistEntity.id, position))
@@ -141,7 +163,7 @@ class MediaRepository(
     @Transaction
     @Throws(IllegalArgumentException::class)
     suspend fun removeSongFromPlaylist(playlist: Playlist, song: Song, position: Long){
-        val playlistEntity = playlistDao.getPlaylistByName(playlist.name) ?: throw IllegalArgumentException("Playlist does not exist")
+        val playlistEntity = playlistDao.getPlaylistByName(playlist.name).first() ?: throw IllegalArgumentException("Playlist does not exist")
         val songEntity = songDao.getSongByName(song.name) ?: throw IllegalArgumentException("Song does not exist")
 
         playlistSongRelationshipDao.delete(PlaylistSongEntryEntity(songEntity.id, playlistEntity.id, position))

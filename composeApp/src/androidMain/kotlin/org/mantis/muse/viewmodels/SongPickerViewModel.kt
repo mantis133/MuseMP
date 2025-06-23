@@ -21,6 +21,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -75,7 +76,7 @@ class SongPickerViewModel(
 
     fun playSongs(songs: List<Song>) {
         viewModelScope.launch(Dispatchers.IO) {
-            val queuePlaylist: Playlist = mediaRepository.getPlaylistByName("Queue")!! // TODO: safe
+            val queuePlaylist: Playlist = mediaRepository.getPlaylistByName("Queue").first()!! // TODO: safe
             queuePlaylist.songList.forEachIndexed { idx, song ->
                 mediaRepository.removeSongFromPlaylist(queuePlaylist, song, idx.toLong())
             }

@@ -18,7 +18,7 @@ interface ArtistDao {
     suspend fun getArtistByName(artistName: String): ArtistEntity
 
     @Query("SELECT * FROM artist WHERE id IN (SELECT artistId FROM artist_song_record WHERE songId = :songId)")
-    suspend fun getArtistsBySong(songId: Long): List<ArtistEntity>
+    fun getArtistsBySong(songId: Long): Flow<List<ArtistEntity>>
 
     @Insert(onConflict = IGNORE)
     suspend fun insertArtists(artists: ArtistEntity): Long

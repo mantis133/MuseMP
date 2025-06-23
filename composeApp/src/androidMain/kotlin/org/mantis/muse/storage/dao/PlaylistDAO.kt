@@ -20,7 +20,7 @@ interface PlaylistDAO {
 //    fun getPlaylistWithSongs(playlistId: Long): Flow<PlaylistWithSongs?>
 
     @Query("SELECT * FROM playlist WHERE name = :playlistName")
-    suspend fun getPlaylistByName(playlistName: String): PlaylistEntity?
+    fun getPlaylistByName(playlistName: String): Flow<PlaylistEntity?>
 
     @Insert
     suspend fun insertPlaylists(vararg playlists: PlaylistEntity)

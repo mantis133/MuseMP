@@ -61,7 +61,7 @@ class PlaylistCreationViewModel(
 
     fun addSongsToPlaylist(playlistName: String) {
         viewModelScope.launch(Dispatchers.IO){
-            val playlist = mediaRepository.getPlaylistByName(playlistName)
+            val playlist = mediaRepository.getPlaylistByName(playlistName).first()
             var idx: Long = playlist!!.size.toLong()
             uiState.value.songs.onEach { song -> mediaRepository.addSongToPlaylist(playlist, song, idx.toLong()); idx += 1 }
         }

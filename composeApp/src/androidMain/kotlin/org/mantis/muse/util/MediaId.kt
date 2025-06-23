@@ -93,7 +93,7 @@ sealed class MediaId(val rep: String){
     data class Playlist(val selector: String): MediaId("PLAYLIST"){
         override fun getInstance(): MediaItem {
             val playlist = runBlocking {
-                repo.getPlaylistByName(this@Playlist.selector)
+                repo.getPlaylistByName(this@Playlist.selector).first()
             }?:throw IllegalStateException("Selector does not map to an existing playlist")
             return MediaItem.Builder()
                 .setUri(playlist.fileURI)

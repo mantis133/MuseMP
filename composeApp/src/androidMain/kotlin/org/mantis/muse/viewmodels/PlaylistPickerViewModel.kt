@@ -10,6 +10,7 @@ import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -66,7 +67,7 @@ class PlaylistPickerViewModel(
     }
 
     fun getPlaylist(playlistName: String): Playlist {
-        return runBlocking { mediaRepository.getPlaylistByName(playlistName)!! }
+        return runBlocking { mediaRepository.getPlaylistByName(playlistName).first()!! }
     }
 
 //    fun updateCaches() = viewModelScope.launch {  }

@@ -28,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -42,11 +43,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import org.mantis.muse.R
 import org.mantis.muse.layouts.components.BufferedImage
 import org.mantis.muse.layouts.theme.MuseTheme
@@ -55,6 +58,8 @@ import org.mantis.muse.util.Song
 import org.mantis.muse.util.coverArt
 import org.mantis.muse.util.toAlbumArt
 import org.mantis.muse.viewmodels.PlaylistPickerViewModel
+import org.mantis.muse.viewmodels.SinglePlaylistViewModel
+import org.mantis.muse.viewmodels.SinglePlaylistViewState
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -62,33 +67,22 @@ fun PlaylistInspector(
     playlistName: String,
     navController: NavController,
     modifier: Modifier = Modifier,
-    viewmodel: PlaylistPickerViewModel = koinViewModel<PlaylistPickerViewModel>(),
+    viewModel: SinglePlaylistViewModel = koinViewModel<SinglePlaylistViewModel>(parameters = { parametersOf(playlistName) }),
 ) {
-    val playlist = viewmodel.getPlaylist(playlistName)
-    PlaylistInspector(
-        playlist,
-        { navController.popBackStack() },
-        { viewmodel.playPlaylist(playlist) },
-        { songIdx -> viewmodel.playPlaylistFromSong(playlist, songIdx) },
-        modifier
-    )
-}
-
-@OptIn(UnstableApi::class)
-@Composable
-fun PlaylistInspector(
-    playlist: Playlist,
-    navController: NavController,
-    modifier: Modifier = Modifier,
-    viewmodel: PlaylistPickerViewModel = koinViewModel<PlaylistPickerViewModel>(),
-) {
-    PlaylistInspector(
-        playlist,
-        { navController.popBackStack() },
-        { viewmodel.playPlaylist(playlist) },
-        { songIdx -> viewmodel.playPlaylistFromSong(playlist, songIdx) },
-        modifier
-    )
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    when (uiState){
+        is SinglePlaylistViewState.Loaded -> {
+            val state = (uiState as SinglePlaylistViewState.Loaded)
+            PlaylistInspector(
+                state.playlist,
+                { navController.popBackStack() },
+                viewModel::playPlaylist,
+                viewModel::playPlaylistFromPosition,
+                modifier
+            )
+        }
+        is SinglePlaylistViewState.Loading -> {}
+    }
 }
 
 @SuppressLint("UnusedBoxWithConstraintsScope")

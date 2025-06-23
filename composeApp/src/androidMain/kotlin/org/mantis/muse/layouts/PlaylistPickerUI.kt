@@ -69,7 +69,11 @@ fun PlaylistSelectionScreenState(
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    PlaylistSelectionScreenState(uiState = uiState, loadPlaylist = { playlist -> navController.navigate(Screen.SinglePlaylistViewScreen(playlist.name)) }, modifier = modifier)
+    PlaylistSelectionScreenState(
+        uiState = uiState,
+        loadPlaylist = { playlist -> navController.navigate(Screen.SinglePlaylistViewScreen(playlist.name)) },
+        modifier = modifier
+    )
 }
 
 @Composable

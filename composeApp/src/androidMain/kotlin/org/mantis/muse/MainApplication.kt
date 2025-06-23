@@ -30,6 +30,7 @@ import org.mantis.muse.util.AndroidMediaPlayer
 import org.mantis.muse.viewmodels.MediaPlayerViewModel
 import org.mantis.muse.viewmodels.PlaylistCreationViewModel
 import org.mantis.muse.viewmodels.PlaylistPickerViewModel
+import org.mantis.muse.viewmodels.SinglePlaylistViewModel
 import org.mantis.muse.viewmodels.SongPickerViewModel
 import java.io.File
 
@@ -93,6 +94,9 @@ class MainApplication: Application() {
                         viewModel { PlaylistPickerViewModel(get(),get()) }
                         viewModel { SongPickerViewModel(get(),get()) }
                         viewModel { PlaylistCreationViewModel(get()) }
+                        viewModel { (playlistName: String) ->
+                            SinglePlaylistViewModel(playlistName, get(), get())
+                        }
                     }
                 )
             }
