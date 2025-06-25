@@ -69,7 +69,7 @@ class MainApplication: Application() {
                                     name = "MusicCache"
                                 )
                                 .enableMultiInstanceInvalidation()
-                                .fallbackToDestructiveMigration()
+                                .fallbackToDestructiveMigration(true)
                                 .build()
                         } withOptions {
                             createdAtStart()

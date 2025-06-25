@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+
     kotlin("plugin.serialization") version "2.1.10"
     id("com.google.devtools.ksp")
 }
@@ -119,7 +120,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.datastore.core.android)
     implementation(libs.androidx.lifecycle.viewmodel)
-    ksp(libs.androidx.room.compiler.v250)
+    ksp(libs.androidx.room.compiler)
     debugImplementation(compose.uiTooling)
 
 }

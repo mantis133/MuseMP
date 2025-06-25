@@ -6,5 +6,6 @@ plugins {
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
-    id("com.google.devtools.ksp") version "2.0.21-1.0.27" apply false
+    id("com.google.devtools.ksp") version "2.1.21-2.0.1" apply false
+//    id("androidx.room") version "$room_version" apply false
 }

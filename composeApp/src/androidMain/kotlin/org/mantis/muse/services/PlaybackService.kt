@@ -85,7 +85,7 @@ class PlaybackService : MediaLibraryService() {
             klass = MusicCacheDB::class.java,
             name = "MusicCache")
             .enableMultiInstanceInvalidation()
-            .fallbackToDestructiveMigration()
+            .fallbackToDestructiveMigration(true)
             .build()
         playlistDao = db.playlistDAO()
         songDao = db.songDAO()

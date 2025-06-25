@@ -16,8 +16,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.core.app.ActivityCompat
 import androidx.core.net.toUri
+import androidx.core.view.WindowCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaBrowser
@@ -58,7 +60,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        window.statusBarColor = getColor(R.color.notificationBar)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        if (Build.VERSION.SDK_INT <= 34){
+            window.statusBarColor = getColor(R.color.notificationBar)
+        }
 
         checkPermissions()
 
@@ -74,12 +79,30 @@ class MainActivity : ComponentActivity() {
         setContent {
             MuseTheme{
                 KoinContext{
-                    NavHostContainer(
-                        Modifier
+                    val insets = WindowInsets.statusBars.asPaddingValues()
+                    Column(
+                        modifier = Modifier
                             .fillMaxSize()
                             .background(MaterialTheme.colorScheme.background)
-                    )
-                    MediaPlayerUI()
+                    ){
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(insets.calculateTopPadding())
+                                .background(MaterialTheme.colorScheme.background)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                        ){
+                            NavHostContainer(
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background)
+                            )
+                            MediaPlayerUI()
+                        }
+                    }
                 }
             }
         }
