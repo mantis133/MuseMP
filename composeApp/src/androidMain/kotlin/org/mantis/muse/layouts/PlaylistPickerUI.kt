@@ -108,6 +108,7 @@ fun PlaylistSelectionScreen(playlists: List<Playlist>, loadPlaylist: (Playlist) 
                 playlist = item,
                 modifier = Modifier
                     .clickable { loadPlaylist(item) }
+                    .height(100.dp)
             )
         }
     }

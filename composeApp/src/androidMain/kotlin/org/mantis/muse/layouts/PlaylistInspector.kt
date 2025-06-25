@@ -94,11 +94,7 @@ fun PlaylistInspector(
             )
         }
         is SinglePlaylistViewState.Loading -> {
-            Box(
-                modifier = Modifier
-                    .size(100.dp)
-                    .background(Color.Red)
-            ) {  }
+
         }
     }
 }
