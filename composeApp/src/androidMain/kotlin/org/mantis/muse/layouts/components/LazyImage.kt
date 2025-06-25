@@ -27,7 +27,7 @@ fun BufferedImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Fit
 ) {
-    val imageState = produceState<ImageLoadState>(initialValue = ImageLoadState.Loading) {
+    val imageState = produceState<ImageLoadState>(initialValue = ImageLoadState.Loading, key1 = imageProvider) {
         value = try {
             ImageLoadState.Success(imageProvider())
         } catch (e: Exception) {

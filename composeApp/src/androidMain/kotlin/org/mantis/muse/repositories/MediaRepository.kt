@@ -3,13 +3,18 @@ package org.mantis.muse.repositories
 import android.database.sqlite.SQLiteConstraintException
 import androidx.core.net.toUri
 import androidx.room.Transaction
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.mantis.muse.storage.dao.ArtistDao
 import org.mantis.muse.storage.dao.ArtistSongRelationshipDao
 import org.mantis.muse.storage.dao.PlaylistDAO
@@ -80,6 +85,17 @@ class MediaRepository(
         playlistDao.getPlaylistByName(playlistName).flatMapLatest{ playlistEntity ->
             if (playlistEntity == null) return@flatMapLatest flowOf(null)
             songDao.getSongsInPlaylist(playlistEntity.id).flatMapLatest { songs ->
+                if (songs.isEmpty()) {
+                    return@flatMapLatest flowOf(
+                        Playlist(
+                            playlistEntity.name,
+                            emptyList(),
+                            playlistEntity.fileUri,
+                            playlistEntity.thumbnailUri
+                        )
+                    )
+                }
+
                 val songsWithArtists = songs.map { song ->
                     artistDao.getArtistsBySong(song.id).map { artistEntities ->
                         Song(
@@ -100,6 +116,7 @@ class MediaRepository(
                     )
                 }
             }
+
         }
 
     suspend fun getArtistByName(artistName: String): Artist? {
@@ -160,13 +177,38 @@ class MediaRepository(
         playlistSongRelationshipDao.insert(PlaylistSongEntryEntity(songEntity.id, playlistEntity.id, position))
     }
 
+    val removalMutex = Mutex()
+
     @Transaction
     @Throws(IllegalArgumentException::class)
     suspend fun removeSongFromPlaylist(playlist: Playlist, song: Song, position: Long){
         val playlistEntity = playlistDao.getPlaylistByName(playlist.name).first() ?: throw IllegalArgumentException("Playlist does not exist")
-        val songEntity = songDao.getSongByName(song.name) ?: throw IllegalArgumentException("Song does not exist")
+        val songEntity = songDao.getSongsInPlaylist(playlistEntity.id).first()[position.toInt()]
+//        positions.forEach { position ->
+//            removalMutex.withLock {
+//                println("MUTEX LOCKED")
+//                playlistSongRelationshipDao.delete(PlaylistSongEntryEntity(playlistEntity.id, songEntity.id, position))
+//                val entries = playlistSongRelationshipDao.playlistEntries
+//                    .first()
+//                    .filter { entry -> entry.position > position }
+//                    .map { entry -> entry.copy(position = entry.position - 1)}
+////                playlistSongRelationshipDao.update(entries)
+////                playlistSongRelationshipDao.decrementPositions(playlistEntity.id, position)
+//                println("MUTEX UN-LOCKED")
+//            }
+//        }
+        playlistSongRelationshipDao.delete(PlaylistSongEntryEntity(playlistId = playlistEntity.id,  songId = songEntity.id, position = position))
+    }
 
-        playlistSongRelationshipDao.delete(PlaylistSongEntryEntity(songEntity.id, playlistEntity.id, position))
+    @Transaction
+    suspend fun deFragmentPlaylist(playlist: Playlist){
+        val playlistEntity = playlistDao.getPlaylistByName(playlist.name).first() ?: throw IllegalArgumentException("Playlist does not exist")
+        val songs = songDao.getSongsInPlaylist(playlistEntity.id).first()
+        playlistSongRelationshipDao.playlistEntries
+            .first()
+            .filter{entity -> entity.playlistId == playlistEntity.id}
+            .forEach { playlistSongEntry -> playlistSongRelationshipDao.delete(playlistSongEntry) }
+        songs.forEachIndexed { idx, song ->  playlistSongRelationshipDao.insert(PlaylistSongEntryEntity(playlistId = playlistEntity.id, songId = song.id, position = idx.toLong())) }
     }
 
     suspend fun addArtistToSong(){}

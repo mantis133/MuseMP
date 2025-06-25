@@ -41,6 +41,7 @@ import org.mantis.muse.repositories.PlaylistRepository
 import org.mantis.muse.repositories.SongRepository
 import org.mantis.muse.services.PlaybackService
 import org.mantis.muse.storage.LocalFileSource
+import org.mantis.muse.storage.MusicCacheDB
 import org.mantis.muse.storage.dao.ArtistDao
 import org.mantis.muse.storage.dao.PlaylistDAO
 import org.mantis.muse.storage.dao.SongDao
@@ -61,12 +62,13 @@ class MainActivity : ComponentActivity() {
 
         checkPermissions()
 
-//        runBlocking {  }
+        val localFileSource = LocalFileSource(this)
+        val songDao = get<MusicCacheDB>().songDAO()
+        val mediaRepository = MediaRepository(get(), get(), get(), get(), get(), get(), )
 
         GlobalScope.launch(Dispatchers.IO){
 //            cleanDB(get(), get(), get())
-//            reloadDB(get(), get(), get(), this@MainActivity)
-
+//            reloadDB(localFileSource, songDao, mediaRepository, this@MainActivity)
         }
 
         setContent {
@@ -131,17 +133,19 @@ suspend fun reloadDB(localFiles: LocalFileSource, songDao: SongDao, mediaReposit
     // There is a crash when searching for a non existent file when adding songs from playlist
 
     val mmr = MediaMetadataRetriever()
+    mediaRepository.insertPlaylist(Playlist("Queue", listOf(), "NULL".toUri(), null))
     localFiles.localMp3Files.collect { files ->
         val songs = files
             .map { fromFilePath(mmr, it.toUri()) }
             .onEach { song -> mediaRepository.insertSong(song) }
     }
-//    localFiles.sharedSongs.collect { uris ->
-//        val songs = uris
-//            .onEach { println("SHARED SONG: $it") }
-//            .onEach { song -> mediaRepository.insertSong(Song(song.name, if(song.artists!=null){listOf(song.artists)}else{listOf()}, song.fileName, song.uri)) }
-//            println(songs.size)
-//    }
+    localFiles.sharedSongs.collect { uris ->
+        val songs = uris
+            .map { fileRes -> fromFilePath(mmr, fileRes.uri).copy(fileName = fileRes.fileName) }
+            .onEach { println("SHARED SONG: $it") }
+//            .onEach { song -> mediaRepository.insertSong(Song(song.name, if(song.artists!=null){listOf(song.artists)}else{listOf()}, song.uri)) }
+            .onEach { song -> mediaRepository.insertSong(song) }
+    }
     localFiles.localPlaylistFiles.collect { files ->
         val playlists = files
             .map { Playlist.Companion.fromURI(it.toUri()) }
@@ -153,7 +157,9 @@ suspend fun reloadDB(localFiles: LocalFileSource, songDao: SongDao, mediaReposit
 //            .forEach { playlist -> mediaRepository.insertPlaylist(playlist) }
 //    }
     mediaRepository.playlistsStream.collect { playlists ->
-        playlists.onEach { playlist ->
+        playlists
+            .filter { playlist -> playlist.name != "Queue" }
+            .onEach { playlist ->
             val completePlaylist = Playlist.Companion.fromURI(playlist.fileURI)
             completePlaylist.songList.forEachIndexed { idx, song ->
                 mediaRepository.addSongToPlaylist(playlist, song, idx.toLong())

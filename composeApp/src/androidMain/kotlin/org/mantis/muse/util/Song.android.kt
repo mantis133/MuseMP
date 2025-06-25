@@ -50,5 +50,5 @@ fun fromFilePath(mmr: MediaMetadataRetriever, fileUri: Uri, context: Context = g
         else -> a
     }
     val durationMs = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong()
-    return Song(title, listOf(artists), durationMs!!, fileUri.toFile().name, fileUri)
+    return Song(title, listOf(artists), durationMs!!, try { fileUri.toFile().name } catch(_: Exception) { "FAKE NAME" }, fileUri)
 }

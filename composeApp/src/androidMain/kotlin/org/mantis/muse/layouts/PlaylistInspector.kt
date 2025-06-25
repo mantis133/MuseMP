@@ -3,9 +3,11 @@ package org.mantis.muse.layouts
 import android.annotation.SuppressLint
 import android.graphics.BitmapFactory
 import androidx.annotation.OptIn
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -23,12 +25,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -75,13 +81,25 @@ fun PlaylistInspector(
             val state = (uiState as SinglePlaylistViewState.Loaded)
             PlaylistInspector(
                 state.playlist,
+                state.editing,
+                state.selectedSongIndices,
                 { navController.popBackStack() },
                 viewModel::playPlaylist,
                 viewModel::playPlaylistFromPosition,
+                viewModel::setEditPlaylistState,
+                viewModel::setSongSelection,
+                viewModel::removeSong,
+                viewModel::removeSelectedSongs,
                 modifier
             )
         }
-        is SinglePlaylistViewState.Loading -> {}
+        is SinglePlaylistViewState.Loading -> {
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .background(Color.Red)
+            ) {  }
+        }
     }
 }
 
@@ -89,9 +107,15 @@ fun PlaylistInspector(
 @Composable
 fun PlaylistInspector(
     playlist: Playlist,
+    editing: Boolean,
+    selectedSongs: Set<Int>,
     navigateBack: () -> Unit,
     playPlaylist: () -> Unit,
     playFromSong: (Int) -> Unit,
+    setEditing: (Boolean) -> Unit,
+    setSongSelection: (Int, Boolean) -> Unit,
+    removeSong: (Long) -> Unit,
+    removeSelectedSongs: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     BoxWithConstraints(
@@ -138,12 +162,25 @@ fun PlaylistInspector(
                         .fillMaxWidth()
                 ) {
                     IconButton(
-                        onClick = {playPlaylist()},
+                        onClick = { setEditing(!editing) },
                         modifier = Modifier
                             .background(
                                 color = Color.White,
                                 shape = CircleShape
-                            ) // TODO: Material3
+                            )
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.edit_icon),
+                            contentDescription = null
+                        )
+                    }
+                    IconButton(
+                        onClick = playPlaylist,
+                        modifier = Modifier
+                            .background(
+                                color = Color.White,
+                                shape = CircleShape
+                            ) // TODO: Material3 Theme
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.play_arrow),
@@ -156,28 +193,87 @@ fun PlaylistInspector(
                     itemsIndexed(playlist.songList){ idx, song ->
                         Row(
                             modifier = Modifier
-                                .clickable { playFromSong(idx) }
+                                .clickable {
+                                    if (editing) {
+                                        val selected = selectedSongs.contains(idx)
+                                        if (selected) setSongSelection(
+                                            idx,
+                                            false
+                                        ) else setSongSelection(idx, true)
+                                    } else {
+                                        playFromSong(idx)
+                                    }
+                                }
                                 .fillMaxWidth()
                                 .padding(10.dp)
                                 .height(80.dp)
-                        ){
-                            BufferedImage(
-                                imageProvider = {
+                        ) {
+                            AnimatedVisibility(editing) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                ) {
+                                    Checkbox(
+                                        checked = selectedSongs.contains(idx),
+                                        onCheckedChange = { currentState -> setSongSelection(idx, currentState) }
+                                    )
+                                }
+                            }
+                            val imageProvider = remember(song) {
+                                suspend {
                                     withContext(Dispatchers.IO) {
                                         try {
                                             song.toAlbumArt()!!.asImageBitmap()
                                         } catch (_: Exception) {
-                                            BitmapFactory.decodeResource(res, R.drawable.home_icon)
+                                            BitmapFactory.decodeResource(
+                                                res,
+                                                R.drawable.home_icon
+                                            )
                                                 .asImageBitmap()
                                         }
                                     }
-                                },
+                                }
+                            }
+                            BufferedImage(
+                                imageProvider = imageProvider,
                                 contentDescription = null,
                             )
                             Column {
                                 Text(text = song.name, style = MaterialTheme.typography.titleMedium)
                                 Text(text = song.artist.joinToString(", "), style = MaterialTheme.typography.bodyMedium)
                             }
+                        }
+                    }
+                }
+            }
+            if (editing) {
+                Box(
+                    contentAlignment = Alignment.BottomCenter,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .alpha(0.7f)
+                            .background(Color.Black)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clickable { removeSelectedSongs() }
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.downloading),
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                            Text(
+                                text = "Remove Songs",
+                                color = Color.White
+                            )
                         }
                     }
                 }
@@ -230,8 +326,8 @@ private fun PlaylistInspectorPreview(){
                 songs,
                 "".toUri(),
                 null,
-            ),
-            {},{},{},
+            ), false, emptySet(),
+            {},{},{},{},{idx, state -> },{},{},
             Modifier.size(400.dp, 800.dp),
         )
     }
