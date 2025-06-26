@@ -78,7 +78,7 @@ class SongPickerViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val queuePlaylist: Playlist = mediaRepository.getPlaylistByName("Queue").first()!! // TODO: safe
             queuePlaylist.songList.forEachIndexed { idx, song ->
-                mediaRepository.removeSongFromPlaylist(queuePlaylist, song, idx.toLong())
+                mediaRepository.removeSongFromPlaylist(queuePlaylist, song, 0) // TODO: Ugly. Tbf according to my spec this is correct
             }
             songs.forEachIndexed { idx, song ->
                 mediaRepository.addSongToPlaylist(queuePlaylist, song, idx.toLong())

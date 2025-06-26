@@ -2,6 +2,7 @@ package org.mantis.muse.storage
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.RoomDatabaseConstructor
 import androidx.room.TypeConverters
 import org.mantis.muse.storage.dao.ArtistDao
 import org.mantis.muse.storage.dao.ArtistSongRelationshipDao
@@ -28,7 +29,7 @@ import org.mantis.muse.storage.entity.SongEntity
     exportSchema = false,
     version = 6
 )
-@TypeConverters(Converters::class)
+//@TypeConverters(Converters::class)
 abstract class MusicCacheDB: RoomDatabase() {
     abstract fun playlistDAO(): PlaylistDAO
     abstract fun songDAO(): SongDao
@@ -36,4 +37,10 @@ abstract class MusicCacheDB: RoomDatabase() {
     abstract fun artistSongRelationDao(): ArtistSongRelationshipDao
     abstract fun playlistSongRelationDao(): PlaylistSongRelationshipDao
     abstract fun recentlyPlayedDao(): RecentlyPlayedDao
+}
+
+// The Room compiler generates the `actual` implementations.
+@Suppress("NO_ACTUAL_FOR_EXPECT", "EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
+expect object AppDatabaseConstructor : RoomDatabaseConstructor<MusicCacheDB> {
+    override fun initialize(): MusicCacheDB
 }

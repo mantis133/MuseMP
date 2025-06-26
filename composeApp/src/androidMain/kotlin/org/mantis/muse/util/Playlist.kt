@@ -34,17 +34,6 @@ class Playlist(
     }
 }
 
-fun uriToImageBitmap(context: Context, uri: Uri): ImageBitmap {
-//    val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-//        val source = ImageDecoder.createSource(context.contentResolver, uri)
-//        ImageDecoder.decodeBitmap(source)
-//    } else {
-        return MediaStore.Images.Media.getBitmap(context.contentResolver, uri).asImageBitmap()
-//    }
-//
-//    return bitmap.asImageBitmap()
-}
-
 val Playlist.coverArt: Bitmap? // PREVENTS COMMON MAIN
     get() {
         val context by inject<Context>(Context::class.java)

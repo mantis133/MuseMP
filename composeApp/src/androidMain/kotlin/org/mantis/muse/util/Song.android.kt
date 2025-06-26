@@ -6,13 +6,14 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import androidx.core.net.toFile
+import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import org.koin.compose.koinInject
 import org.koin.core.context.GlobalContext.get
 import org.mantis.muse.storage.entity.SongEntity
 import java.io.File
 
-data class Song(
+actual data class Song(
     val name: String,
     val artist: List<String>,
     val durationMs: Long,
@@ -20,7 +21,7 @@ data class Song(
     val fileUri: Uri
 ) {
     constructor(name: String, artist: List<String>, fileUri: Uri): this(name, artist, 0L, "", fileUri)
-    constructor(songEntity: SongEntity, artists: List<String>): this(songEntity.name, artists, songEntity.durationMs, songEntity.fileName, songEntity.uri)
+    constructor(songEntity: SongEntity, artists: List<String>): this(songEntity.name, artists, songEntity.durationMs, songEntity.fileName, songEntity.uri.toUri())
 
     override fun toString(): String {
         return "$name, $artist, $fileUri"
@@ -51,4 +52,11 @@ fun fromFilePath(mmr: MediaMetadataRetriever, fileUri: Uri, context: Context = g
     }
     val durationMs = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong()
     return Song(title, listOf(artists), durationMs!!, try { fileUri.toFile().name } catch(_: Exception) { "FAKE NAME" }, fileUri)
+}
+
+actual fun Song.toSongEntity(): SongEntity{
+    return SongEntity(0, this.name, this.durationMs, this.fileName, this.fileUri.toString())
+}
+actual fun Song.toSongEntity(id: Long): SongEntity{
+    return SongEntity(id, this.name, this.durationMs, this.fileName, this.fileUri.toString())
 }

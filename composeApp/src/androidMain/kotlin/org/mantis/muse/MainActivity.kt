@@ -79,13 +79,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             MuseTheme{
                 KoinContext{
-                    val insets = WindowInsets.statusBars.asPaddingValues()
+                    val insets = WindowInsets.systemBars.asPaddingValues()
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(MaterialTheme.colorScheme.background)
+                            .navigationBarsPadding()
                     ){
-                        Box(
+                        Spacer(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(insets.calculateTopPadding())

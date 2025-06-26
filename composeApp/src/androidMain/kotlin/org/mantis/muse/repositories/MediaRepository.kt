@@ -32,6 +32,7 @@ import org.mantis.muse.util.MediaId
 import org.mantis.muse.util.Playlist
 import org.mantis.muse.util.Song
 import org.mantis.muse.util.toId
+import org.mantis.muse.util.toSongEntity
 
 class MediaRepository(
     private val playlistDao: PlaylistDAO,
@@ -46,8 +47,8 @@ class MediaRepository(
             Playlist(
                 playlistEntity.name,
                 songDao.getSongsInPlaylist(playlistEntity.id).first().map { Song(it,  artistDao.getArtistsBySong(it.id).first().map { it.name }) },
-                playlistEntity.fileUri,
-                playlistEntity.thumbnailUri,
+                playlistEntity.fileUri.toUri(),
+                playlistEntity.thumbnailUri?.toUri(),
             )
         }
     }
@@ -90,8 +91,8 @@ class MediaRepository(
                         Playlist(
                             playlistEntity.name,
                             emptyList(),
-                            playlistEntity.fileUri,
-                            playlistEntity.thumbnailUri
+                            playlistEntity.fileUri.toUri(),
+                            playlistEntity.thumbnailUri?.toUri()
                         )
                     )
                 }
@@ -111,8 +112,8 @@ class MediaRepository(
                     Playlist(
                         playlistEntity.name,
                         songs.toList(),
-                        playlistEntity.fileUri,
-                        playlistEntity.thumbnailUri
+                        playlistEntity.fileUri.toUri(),
+                        playlistEntity.thumbnailUri?.toUri()
                     )
                 }
             }
@@ -128,7 +129,7 @@ class MediaRepository(
     suspend fun getSongsByArtistName(artistName: String): List<Song>{
         val artistEntity = artistDao.getArtistByName(artistName)
         return songDao.getSongsFromArtist(artistEntity.id)
-            .map { Song(it.name, artistDao.getArtistsBySong(it.id).first().map { it.name }, it.uri) }
+            .map { Song(it.name, artistDao.getArtistsBySong(it.id).first().map { it.name }, it.uri.toUri()) }
     }
 
     suspend fun getArtistsBySong(){}
@@ -145,7 +146,7 @@ class MediaRepository(
     }
 
     suspend fun insertPlaylist(playlist: Playlist) {
-        try{ playlistDao.insertPlaylists(PlaylistEntity(0, playlist.name, playlist.fileURI, playlist.thumbnailUri)) }
+        try{ playlistDao.insertPlaylists(PlaylistEntity(0, playlist.name, playlist.fileURI.toString(), playlist.thumbnailUri?.toString())) }
         catch (e: SQLiteConstraintException) {
             // TODO: More robust error handling.
             // runs when the unique constraints fail
@@ -155,7 +156,7 @@ class MediaRepository(
     @Transaction
     suspend fun insertSong(song: Song){
         try {
-            var songId = songDao.insertSongs(SongEntity(song))
+            var songId = songDao.insertSongs(song.toSongEntity())
             if (songId==-1L){ songId = songDao.getSongByName(song.name)!!.id }
             song.artist[0].split(", ").onEach { artistName ->
                 var artistId = artistDao.insertArtists(ArtistEntity(0, artistName, null, null))

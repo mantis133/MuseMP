@@ -41,10 +41,10 @@ class PlaylistRepository(
     }
 
     suspend fun addNewPlaylist(playlist: Playlist) {
-        playlistDao.insertPlaylists(PlaylistEntity(0, playlist.name, playlist.fileURI, playlist.thumbnailUri))
+        playlistDao.insertPlaylists(PlaylistEntity(0, playlist.name, playlist.fileURI.toString(), playlist.thumbnailUri?.toString()))
     }
 
     suspend fun removePlaylist(playlist: Playlist) {
-        playlistDao.deletePlaylist(PlaylistEntity(0, playlist.name, playlist.fileURI, playlist.thumbnailUri))
+        playlistDao.deletePlaylist(PlaylistEntity(0, playlist.name, playlist.fileURI.toString(), playlist.thumbnailUri?.toString()))
     }
 }

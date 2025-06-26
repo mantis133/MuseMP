@@ -8,7 +8,6 @@ import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import org.mantis.muse.storage.entity.PlaylistEntity
-import org.mantis.muse.util.Playlist
 
 @Dao
 interface PlaylistDAO {

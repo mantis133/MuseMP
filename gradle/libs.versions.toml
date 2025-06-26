@@ -28,6 +28,7 @@ roomCommon = "2.7.2"
 roomCompiler = "2.7.2"
 roomKtx = "2.7.2"
 datastoreCoreAndroid = "1.1.7"
+sqlite = "2.5.2"
 
 [libraries]
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCommon" }
@@ -60,6 +61,7 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 room-compiler = { module = "androidx.room:room-compiler" }
 room-runtime = { module = "androidx.room:room-runtime" }
+sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 androidx-datastore-core-android = { group = "androidx.datastore", name = "datastore-core-android", version.ref = "datastoreCoreAndroid" }
 
 [plugins]
