@@ -24,7 +24,29 @@ import androidx.room.Room
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
+import io.ktor.server.websocket.DefaultWebSocketServerSession
+import io.ktor.server.websocket.webSocket
+import io.ktor.server.websocket.WebSockets
+import io.ktor.server.application.*
+import io.ktor.server.websocket.pingPeriod
+import io.ktor.server.websocket.timeout
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readText
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.mantis.muse.network.PlayerCommand
+import org.mantis.muse.network.RemotePlayer
+import org.mantis.muse.network.json
 import org.mantis.muse.repositories.MediaRepository
 import org.mantis.muse.storage.MusicCacheDB
 import org.mantis.muse.storage.dao.ArtistDao
@@ -33,9 +55,13 @@ import org.mantis.muse.storage.dao.PlaylistDAO
 import org.mantis.muse.storage.dao.PlaylistSongRelationshipDao
 import org.mantis.muse.storage.dao.RecentlyPlayedDao
 import org.mantis.muse.storage.dao.SongDao
+import org.mantis.muse.util.LoopState
 import org.mantis.muse.util.MediaId.Root
+import org.mantis.muse.util.PlayerState
 import org.mantis.muse.util.toMuseMediaId
 import java.lang.IllegalStateException
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.seconds
 
 @UnstableApi
 class PlaybackService : MediaLibraryService() {
@@ -51,6 +77,8 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var recentDao: RecentlyPlayedDao
     private lateinit var mediaRepository: MediaRepository
     private lateinit var callbacks: MLCallbacks
+
+    private lateinit var server: Job
 
     val intentReceiver = object: BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -116,7 +144,9 @@ class PlaybackService : MediaLibraryService() {
 
             .build()
 
-        player.addListener(PCallbacks(mediaRepository, player))
+        val commandChannel = Channel<PlayerCommand>(UNLIMITED)
+
+        player.addListener(PCallbacks(mediaRepository, player, commandChannel))
 
         session = MediaLibrarySession.Builder(this, player, callbacks)
             .setId("MuseMP")
@@ -129,6 +159,12 @@ class PlaybackService : MediaLibraryService() {
                 addAction(Intent.ACTION_HEADSET_PLUG)
             }
         )
+
+        server = CoroutineScope(Dispatchers.IO).launch {
+            val port = 19742
+            embeddedServer(Netty, port = port, host = "0.0.0.0", module = Application::module).start(wait = true)
+            println("EXITING SERVER")
+        }
     }
 
 
@@ -159,6 +195,8 @@ class PlaybackService : MediaLibraryService() {
         }
         unregisterReceiver(intentReceiver)
         super.onDestroy()
+//        remotePlayer.close()
+        server.cancel()
     }
 }
 
@@ -290,7 +328,7 @@ class MLCallbacks(val repo: MediaRepository): MediaLibrarySession.Callback {
     }
 }
 
-class PCallbacks(private val repo: MediaRepository, private val player: Player): Player.Listener {
+class PCallbacks(private val repo: MediaRepository, private val player: Player, private val commandChannel: Channel<PlayerCommand>): Player.Listener {
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
 //        super.onMediaItemTransition(mediaItem, reason)
 
@@ -318,4 +356,52 @@ class PCallbacks(private val repo: MediaRepository, private val player: Player):
         }
     }
 
+    override fun onRepeatModeChanged(repeatMode: Int) {
+        super.onRepeatModeChanged(repeatMode)
+        val newState = when (repeatMode) {
+            Player.REPEAT_MODE_OFF -> LoopState.None
+            Player.REPEAT_MODE_ONE -> LoopState.Single
+            Player.REPEAT_MODE_ALL -> LoopState.Full
+            else -> LoopState.None
+        }
+        commandChannel.trySend(PlayerCommand.UpdateState(PlayerState(loopState = newState)))
+    }
+}
+
+fun Application.module() {
+    install(WebSockets) {
+        pingPeriod = 15.seconds
+        timeout = 15.seconds
+        maxFrameSize = Long.MAX_VALUE
+        masking = false
+    }
+    routing {
+        val connections = ConcurrentHashMap.newKeySet<DefaultWebSocketServerSession>()
+        webSocket("/") {
+            connections += this
+            for (frame in incoming) {
+                println(frame)
+                if (frame is Frame.Text) {
+                    val command = json.decodeFromString<PlayerCommand>(frame.readText())
+                    val response = when (command) {
+                        PlayerCommand.Play -> {
+                            PlayerCommand.UpdateState(PlayerState(playing = true))
+                        }
+                        PlayerCommand.Pause -> TODO()
+                        PlayerCommand.SkipLast -> TODO()
+                        PlayerCommand.SkipNext -> TODO()
+                        is PlayerCommand.SeekPosition -> TODO()
+                        PlayerCommand.RequestState -> TODO()
+                        is PlayerCommand.UpdateState -> TODO()
+                    }
+                    for (connection in connections) {
+                        connection.send(Frame.Text(json.encodeToString<PlayerCommand>(response)))
+                    }
+                }
+            }
+        }
+        get("/ping") {
+            call.respondText("pong")
+        }
+    }
 }
