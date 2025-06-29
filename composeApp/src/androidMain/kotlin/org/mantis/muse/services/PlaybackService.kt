@@ -44,6 +44,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.mantis.muse.network.PlayerCommand
 import org.mantis.muse.network.RemotePlayer
 import org.mantis.muse.network.json
@@ -162,7 +163,9 @@ class PlaybackService : MediaLibraryService() {
 
         server = CoroutineScope(Dispatchers.IO).launch {
             val port = 19742
-            embeddedServer(Netty, port = port, host = "0.0.0.0", module = Application::module).start(wait = true)
+            embeddedServer(Netty, port = port, host = "0.0.0.0"){
+                module(player)
+            }.start(wait = true)
             println("EXITING SERVER")
         }
     }
@@ -182,6 +185,8 @@ class PlaybackService : MediaLibraryService() {
             || player.playbackState == Player.STATE_ENDED) {
             // Stop the service if not playing, continue playing in the background
             // otherwise.
+            println("Task removed")
+            server.cancel()
             stopSelf()
         }
     }
@@ -195,7 +200,6 @@ class PlaybackService : MediaLibraryService() {
         }
         unregisterReceiver(intentReceiver)
         super.onDestroy()
-//        remotePlayer.close()
         server.cancel()
     }
 }
@@ -368,7 +372,9 @@ class PCallbacks(private val repo: MediaRepository, private val player: Player, 
     }
 }
 
-fun Application.module() {
+fun Application.module(
+    player: Player
+) {
     install(WebSockets) {
         pingPeriod = 15.seconds
         timeout = 15.seconds
@@ -382,23 +388,40 @@ fun Application.module() {
             for (frame in incoming) {
                 println(frame)
                 if (frame is Frame.Text) {
+                    println("Frame is Text")
                     val command = json.decodeFromString<PlayerCommand>(frame.readText())
-                    val response = when (command) {
+                    val response: PlayerCommand = when (command) {
                         PlayerCommand.Play -> {
-                            PlayerCommand.UpdateState(PlayerState(playing = true))
+                            println("Play 1")
+                            withContext(Dispatchers.Main) {
+                                player.play()
+                            }
+                            println("Play 2")
+                            PlayerCommand.UpdateState(PlayerState(playing = true)) // TODO: reference true player state
                         }
-                        PlayerCommand.Pause -> TODO()
+                        PlayerCommand.Pause -> {
+                            println("Pause 1")
+                            withContext(Dispatchers.Main) {
+                                player.pause()
+                            }
+                            println("Pause 2")
+                            PlayerCommand.UpdateState(PlayerState(playing = false)) // TODO: reference true player state
+                        }
                         PlayerCommand.SkipLast -> TODO()
                         PlayerCommand.SkipNext -> TODO()
                         is PlayerCommand.SeekPosition -> TODO()
                         PlayerCommand.RequestState -> TODO()
                         is PlayerCommand.UpdateState -> TODO()
                     }
+                    println("Returning: $response")
+                    val encodedResponse = json.encodeToString<PlayerCommand>(response)
+                    println("Encoded: $encodedResponse")
                     for (connection in connections) {
-                        connection.send(Frame.Text(json.encodeToString<PlayerCommand>(response)))
+                        connection.send(Frame.Text(encodedResponse))
                     }
                 }
             }
+            connections -= this
         }
         get("/ping") {
             call.respondText("pong")

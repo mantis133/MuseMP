@@ -1,5 +1,6 @@
 package org.mantis.muse.network
 
+import androidx.compose.ui.graphics.decodeToImageBitmap
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocket
@@ -9,6 +10,8 @@ import io.ktor.websocket.WebSocketSession
 import io.ktor.websocket.readText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +23,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import org.koin.core.component.getScopeId
+import org.mantis.muse.storage.dao.RemoteConnectionDao
+import org.mantis.muse.storage.entity.RemoteConnectionEntity
 import org.mantis.muse.util.PlayerState
 
 @Serializable
@@ -49,66 +54,87 @@ val json = Json {
         }
     }
 
+data class RemotePlayerState(
+    val playerState: PlayerState,
+    val connectedDevice: RemoteConnectionEntity?,
+    val connected: Boolean,
+)
+
 class RemotePlayer(
-    val ip: String,
-    val port: Short,
-    val advertising: Boolean,
     val initialPlayerState: PlayerState = PlayerState()
 ) {
     private val client = HttpClient {
         install(WebSockets)
     }
+
     private var session: WebSocketSession? = null
+    private var socketJob: Job? = null
     private val outgoingMessages = Channel<String>(Channel.UNLIMITED)
 
-    private var _connectedState = MutableStateFlow(false)
-    val connectedState = _connectedState.asStateFlow()
-
-    private var _playerState = MutableStateFlow(initialPlayerState)
+    private var _playerState = MutableStateFlow(RemotePlayerState(
+        playerState = initialPlayerState,
+        connectedDevice = null,
+        connected = false
+    ))
     val playerState = _playerState.asStateFlow()
 
-    fun start() = CoroutineScope(Dispatchers.IO).launch {
-        client.webSocket("ws://${ip}:${port}/") {
-            session = this
-            _connectedState.update { true }
+    fun start() {
+        socketJob = CoroutineScope(Dispatchers.IO).launch {
+            if (playerState.value.connectedDevice == null) return@launch
+            println("Connecting to: ${playerState.value.connectedDevice?.ip}:${playerState.value.connectedDevice?.port}")
+            client.webSocket("ws://${playerState.value.connectedDevice?.ip}:${playerState.value.connectedDevice?.port}/") {
+                session = this
+                _playerState.update { playerState.value.copy(connected = true) }
 
-            val sendJob = launch {
-                for (msg in outgoingMessages) {
-                    send(Frame.Text(msg))
+                val sendJob = launch {
+                    for (msg in outgoingMessages) {
+                        println("SENDING FRAME: $msg")
+                        send(Frame.Text(msg))
+                    }
                 }
+
+
+                for (frame in incoming) {
+                    onReceive(frame)
+                }
+                println("Quiting session")
+                sendJob.cancel()
+                _playerState.update { playerState.value.copy(connected = false) }
             }
-
-
-            for (frame in incoming) {
-                onReceive(frame)
-            }
-
-            sendJob.cancel()
-            _connectedState.update { false }
         }
     }
 
-    fun close(){}
+    fun close() {
+        session?.cancel()
+//        socketJob?.cancel()
+        _playerState.update { playerState.value.copy(connected = false) }
+    }
 
     private fun onReceive(frame: Frame) {
         println("RECEIVED A FRAME")
         if (frame is Frame.Text) {
             val command = json.decodeFromString<PlayerCommand>(frame.readText())
+            val currentPlayerState = playerState.value.playerState.copy()
             when (command) {
-                PlayerCommand.Play -> {_playerState.update { playerState.value.copy(playing = true) }}
-                PlayerCommand.Pause -> {_playerState.update { playerState.value.copy(playing = false) }}
+                PlayerCommand.Play -> {_playerState.update { playerState.value.copy(playerState = currentPlayerState.copy(playing = true)) }}
+                PlayerCommand.Pause -> {_playerState.update { playerState.value.copy(playerState = currentPlayerState.copy(playing = false)) }}
                 PlayerCommand.SkipLast -> TODO()
                 PlayerCommand.SkipNext -> TODO()
                 is PlayerCommand.SeekPosition -> TODO()
-                PlayerCommand.RequestState -> { send(PlayerCommand.UpdateState(playerState.value)) }
-                is PlayerCommand.UpdateState -> { _playerState.update { command.state } }
+                PlayerCommand.RequestState -> { send(PlayerCommand.UpdateState(playerState.value.playerState)) }
+                is PlayerCommand.UpdateState -> { _playerState.update { playerState.value.copy(playerState = command.state) } }
             }
         }
     }
 
     fun send(command: PlayerCommand) {
-        val serializedCommand = json.encodeToString(command)
+        val serializedCommand = json.encodeToString<PlayerCommand>(command)
         val result = outgoingMessages.trySend(serializedCommand)
+        println( "$result + $serializedCommand")
+    }
+
+    fun connectDevice(device: RemoteConnectionEntity?) {
+        _playerState.update { playerState.value.copy(connectedDevice = device) }
     }
 }
 

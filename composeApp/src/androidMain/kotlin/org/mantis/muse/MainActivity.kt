@@ -31,6 +31,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import muse.composeapp.generated.resources.Res
+import muse.composeapp.generated.resources.pause_button
 import org.koin.android.ext.android.get
 import org.koin.android.ext.android.getKoin
 import org.koin.android.ext.android.inject
@@ -216,11 +218,3 @@ suspend fun reloadDB(localFiles: LocalFileSource, songDao: SongDao, mediaReposit
 
     mmr.release()
 }
-
-//data class M3UParserResult(
-//    val songUris: List<String>
-//)
-//
-//fun m3uParser(fileLines: List<String>): M3UParserResult {
-//
-//}

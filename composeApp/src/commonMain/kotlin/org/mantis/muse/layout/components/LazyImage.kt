@@ -1,17 +1,15 @@
-package org.mantis.muse.layouts.components
+package org.mantis.muse.layout.components
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Text
+//noinspection UsingMaterialAndMaterial3Libraries
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 
 sealed class ImageLoadState {
     object Loading : ImageLoadState()

@@ -2,7 +2,6 @@ package org.mantis.muse.layouts
 
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.widget.Space
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -32,7 +31,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,15 +44,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toFile
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import org.koin.compose.viewmodel.koinViewModel
 import org.mantis.muse.Screen
-import org.mantis.muse.layouts.components.BufferedImage
-import org.mantis.muse.layouts.components.PlaylistCard
 import org.mantis.muse.util.Playlist
-import org.mantis.muse.util.Song
 import org.mantis.muse.util.coverArt
 import org.mantis.muse.viewmodels.PlaylistCreationViewModel
 
