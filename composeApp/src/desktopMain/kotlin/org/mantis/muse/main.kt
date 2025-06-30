@@ -1,8 +1,5 @@
 package org.mantis.muse
 
-
-
-
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -139,7 +136,8 @@ data class RemotePlayerViewState (
 
 class RemotePlayerViewModel(
     val remoteConnectionDao: RemoteConnectionDao,
-): ViewModel() {
+): ViewModel()
+{
 
     var remotePlayer: RemotePlayer = RemotePlayer()
 
@@ -190,6 +188,14 @@ class RemotePlayerViewModel(
 
     fun pause() {
         remotePlayer.send(PlayerCommand.Pause)
+    }
+
+    fun skipNext(){
+        remotePlayer.send(PlayerCommand.SkipNext)
+    }
+
+    fun skipLast(){
+        remotePlayer.send(PlayerCommand.SkipLast)
     }
 
     fun setRemote(remote: RemoteConnectionEntity?) {
@@ -288,8 +294,8 @@ fun main() = application {
                     loopState = uiState.playerState.loopState,
                     shuffleState = uiState.playerState.shuffling,
                     togglePlayPause = { if (viewUiState.playerState.playing) viewModel.pause() else viewModel.play() },
-                    skipLast = {  },
-                    skipNext = {  },
+                    skipLast = viewModel::skipLast,
+                    skipNext = viewModel::skipNext,
                     nextLoopState = {  },
                     toggleShuffle = {  },
                     onSeek = {  },
@@ -433,3 +439,4 @@ fun AddRemoteForm(
         }
     }
 }
+

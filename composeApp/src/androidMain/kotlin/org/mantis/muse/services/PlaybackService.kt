@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -63,6 +64,8 @@ import org.mantis.muse.util.toMuseMediaId
 import java.lang.IllegalStateException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.seconds
+
+const val TEN_MINUTES: Long = (10*60*60*1000)
 
 @UnstableApi
 class PlaybackService : MediaLibraryService() {
@@ -164,7 +167,7 @@ class PlaybackService : MediaLibraryService() {
         server = CoroutineScope(Dispatchers.IO).launch {
             val port = 19742
             embeddedServer(Netty, port = port, host = "0.0.0.0"){
-                module(player)
+                module(player, commandChannel)
             }.start(wait = true)
             println("EXITING SERVER")
         }
@@ -360,6 +363,26 @@ class PCallbacks(private val repo: MediaRepository, private val player: Player, 
         }
     }
 
+    override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+        super.onMediaMetadataChanged(mediaMetadata)
+        CoroutineScope(Dispatchers.Default).launch{
+            commandChannel.send(
+                PlayerCommand.UpdateState(
+                    getPlayerState(player).copy(
+                        songTitle = mediaMetadata.title.toString(),
+                        songArtists = mediaMetadata.artist.toString(),
+                        trackDuration = mediaMetadata.durationMs ?: TEN_MINUTES
+                    )
+                )
+            )
+        }
+    }
+
+    override fun onIsPlayingChanged(isPlaying: Boolean) {
+        super.onIsPlayingChanged(isPlaying)
+        CoroutineScope(Dispatchers.Default).launch{ commandChannel.send(PlayerCommand.UpdateState(getPlayerState(player).copy(playing = isPlaying))) }
+    }
+
     override fun onRepeatModeChanged(repeatMode: Int) {
         super.onRepeatModeChanged(repeatMode)
         val newState = when (repeatMode) {
@@ -368,12 +391,33 @@ class PCallbacks(private val repo: MediaRepository, private val player: Player, 
             Player.REPEAT_MODE_ALL -> LoopState.Full
             else -> LoopState.None
         }
-        commandChannel.trySend(PlayerCommand.UpdateState(PlayerState(loopState = newState)))
+        CoroutineScope(Dispatchers.Default).launch{
+            commandChannel.send(
+                PlayerCommand.UpdateState(
+                    runBlocking { getPlayerState(player) }.copy(
+                        loopState = newState
+                    )
+                )
+            )
+        }
+    }
+
+    override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+        super.onShuffleModeEnabledChanged(shuffleModeEnabled)
+        CoroutineScope(Dispatchers.Default).launch{
+            commandChannel.trySend(
+                PlayerCommand.UpdateState(
+                    runBlocking { getPlayerState(player) }.copy(
+                        shuffling = shuffleModeEnabled
+                    )
+                )
+            )
+        }
     }
 }
 
 fun Application.module(
-    player: Player
+    player: Player, commandChannel: Channel<PlayerCommand>
 ) {
     install(WebSockets) {
         pingPeriod = 15.seconds
@@ -385,6 +429,15 @@ fun Application.module(
         val connections = ConcurrentHashMap.newKeySet<DefaultWebSocketServerSession>()
         webSocket("/") {
             connections += this
+
+            val sendJob = launch {
+                for (cmd in commandChannel) {
+                    for (connection in connections) {
+                        connection.send(Frame.Text(json.encodeToString<PlayerCommand>(cmd)))
+                    }
+                }
+            }
+
             for (frame in incoming) {
                 println(frame)
                 if (frame is Frame.Text) {
@@ -392,25 +445,33 @@ fun Application.module(
                     val command = json.decodeFromString<PlayerCommand>(frame.readText())
                     val response: PlayerCommand = when (command) {
                         PlayerCommand.Play -> {
-                            println("Play 1")
                             withContext(Dispatchers.Main) {
                                 player.play()
                             }
-                            println("Play 2")
-                            PlayerCommand.UpdateState(PlayerState(playing = true)) // TODO: reference true player state
+                            PlayerCommand.UpdateState(getPlayerState(player)) // TODO: reference true player state
                         }
                         PlayerCommand.Pause -> {
-                            println("Pause 1")
                             withContext(Dispatchers.Main) {
                                 player.pause()
                             }
-                            println("Pause 2")
-                            PlayerCommand.UpdateState(PlayerState(playing = false)) // TODO: reference true player state
+                            PlayerCommand.UpdateState(getPlayerState(player)) // TODO: reference true player state
                         }
-                        PlayerCommand.SkipLast -> TODO()
-                        PlayerCommand.SkipNext -> TODO()
+                        PlayerCommand.SkipLast -> {
+                            withContext(Dispatchers.Main){
+                                player.seekToPrevious()
+                            }
+                            PlayerCommand.UpdateState(getPlayerState(player))
+                        }
+                        PlayerCommand.SkipNext -> {
+                            withContext(Dispatchers.Main){
+                                player.seekToNext()
+                            }
+                            PlayerCommand.UpdateState(getPlayerState(player))
+                        }
                         is PlayerCommand.SeekPosition -> TODO()
-                        PlayerCommand.RequestState -> TODO()
+                        PlayerCommand.RequestState -> {
+                            PlayerCommand.UpdateState(getPlayerState(player))
+                        }
                         is PlayerCommand.UpdateState -> TODO()
                     }
                     println("Returning: $response")
@@ -421,6 +482,7 @@ fun Application.module(
                     }
                 }
             }
+            sendJob.cancel()
             connections -= this
         }
         get("/ping") {
@@ -428,3 +490,15 @@ fun Application.module(
         }
     }
 }
+
+suspend fun getPlayerState(player: Player): PlayerState = withContext(Dispatchers.Main) {
+    PlayerState(
+        songTitle = player.mediaMetadata.title.toString(),
+        songArtists = player.mediaMetadata.artist.toString(),
+        playing = player.isPlaying,
+        shuffling = player.shuffleModeEnabled,
+        trackPosition = player.currentPosition,
+        trackDuration = player.duration,
+    )
+}
+

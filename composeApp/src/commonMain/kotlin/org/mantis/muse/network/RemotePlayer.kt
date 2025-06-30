@@ -85,6 +85,7 @@ class RemotePlayer(
             client.webSocket("ws://${playerState.value.connectedDevice?.ip}:${playerState.value.connectedDevice?.port}/") {
                 session = this
                 _playerState.update { playerState.value.copy(connected = true) }
+                send(PlayerCommand.RequestState)
 
                 val sendJob = launch {
                     for (msg in outgoingMessages) {
@@ -114,9 +115,12 @@ class RemotePlayer(
         println("RECEIVED A FRAME")
         if (frame is Frame.Text) {
             val command = json.decodeFromString<PlayerCommand>(frame.readText())
-            val currentPlayerState = playerState.value.playerState.copy()
+            val currentPlayerState = playerState.value.playerState
             when (command) {
-                PlayerCommand.Play -> {_playerState.update { playerState.value.copy(playerState = currentPlayerState.copy(playing = true)) }}
+                PlayerCommand.Play -> {
+                    println("SETTING PLAY")
+                    _playerState.update { playerState.value.copy(playerState = currentPlayerState.copy(playing = true)) }
+                }
                 PlayerCommand.Pause -> {_playerState.update { playerState.value.copy(playerState = currentPlayerState.copy(playing = false)) }}
                 PlayerCommand.SkipLast -> TODO()
                 PlayerCommand.SkipNext -> TODO()
