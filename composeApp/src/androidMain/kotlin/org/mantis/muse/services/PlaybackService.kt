@@ -5,7 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Bundle
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
@@ -18,13 +18,13 @@ import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaLibraryService.LibraryParams
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
-import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
-import androidx.media3.session.SessionResult
 import androidx.room.Room
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.response.respondText
@@ -34,6 +34,8 @@ import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.server.websocket.webSocket
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.application.*
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondBytes
 import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
 import io.ktor.websocket.Frame
@@ -47,7 +49,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.mantis.muse.network.PlayerCommand
-import org.mantis.muse.network.RemotePlayer
 import org.mantis.muse.network.json
 import org.mantis.muse.repositories.MediaRepository
 import org.mantis.muse.storage.MusicCacheDB
@@ -58,12 +59,16 @@ import org.mantis.muse.storage.dao.PlaylistSongRelationshipDao
 import org.mantis.muse.storage.dao.RecentlyPlayedDao
 import org.mantis.muse.storage.dao.SongDao
 import org.mantis.muse.util.LoopState
+import org.mantis.muse.util.MediaId
 import org.mantis.muse.util.MediaId.Root
 import org.mantis.muse.util.PlayerState
+import org.mantis.muse.util.toAlbumArt
 import org.mantis.muse.util.toMuseMediaId
+import java.io.ByteArrayOutputStream
 import java.lang.IllegalStateException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.seconds
+import androidx.core.graphics.scale
 
 const val TEN_MINUTES: Long = (10*60*60*1000)
 
@@ -167,7 +172,7 @@ class PlaybackService : MediaLibraryService() {
         server = CoroutineScope(Dispatchers.IO).launch {
             val port = 19742
             embeddedServer(Netty, port = port, host = "0.0.0.0"){
-                module(player, commandChannel)
+                module(player, mediaRepository, commandChannel)
             }.start(wait = true)
             println("EXITING SERVER")
         }
@@ -417,7 +422,7 @@ class PCallbacks(private val repo: MediaRepository, private val player: Player, 
 }
 
 fun Application.module(
-    player: Player, commandChannel: Channel<PlayerCommand>
+    player: Player, mediaRepository: MediaRepository, commandChannel: Channel<PlayerCommand>
 ) {
     install(WebSockets) {
         pingPeriod = 15.seconds
@@ -487,6 +492,35 @@ fun Application.module(
         }
         get("/ping") {
             call.respondText("pong")
+        }
+        get("/thumbnail") {
+            try {
+                withContext(Dispatchers.Main){ (player.currentMediaItem?.mediaId?.toMuseMediaId() as? MediaId.Song)?.selector}?.let { songName ->
+                    mediaRepository.getSongByName(songName)?.let { song ->
+                        val image: Bitmap? = song.toAlbumArt()
+                        if (image != null) {
+
+                            val maxWidth = 512
+                            val aspectRatio = image.height.toFloat() / image.width
+
+                            val scaledImage = image.scale(maxWidth, (maxWidth * aspectRatio).toInt())
+
+                            val stream = ByteArrayOutputStream()
+                            scaledImage.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                            val byteArray = stream.toByteArray()
+
+                            call.respondBytes(byteArray, contentType = ContentType.Image.PNG)
+                        } else {
+                            call.respond(HttpStatusCode.NotFound)
+                        }
+                        return@get
+                    }
+                }
+                call.respond(HttpStatusCode.BadRequest)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                call.respond(HttpStatusCode.InternalServerError)
+            }
         }
     }
 }
