@@ -118,7 +118,6 @@ fun HorizontalNavView(
 
         val textMeasurer = rememberTextMeasurer()
 
-        var scrollOffset by remember { mutableFloatStateOf(canvasWidth / 2f - textMeasurer.measure(routeStrings[0], fontStyling).size.width/2f) }
         var selectedIndex by remember { mutableIntStateOf(selectedRouteIndex) }
 
         val trackLength = remember { routeStrings.map{textMeasurer.measure(it, fontStyling).size.width}.fold(0f){acc, route -> acc + route} + (routeStrings.size-1)*spacerSize }
@@ -128,7 +127,7 @@ fun HorizontalNavView(
                 .runningReduceIndexed { idx, acc, stringWidth -> acc + stringWidth + if (idx!=0)spacerSize else 0 }
                 .mapIndexed { idx, pos ->  pos - textMeasurer.measure(routeStrings[idx], fontStyling).size.width/2  }
         }
-        scrollOffset = (canvasWidth/2f) - routeMidPoints[selectedIndex]
+        var scrollOffset by remember { mutableFloatStateOf((canvasWidth / 2f) - routeMidPoints[selectedIndex]) }
 
         Canvas(
             Modifier
@@ -137,15 +136,24 @@ fun HorizontalNavView(
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
-                            scrollOffset = (canvasWidth/2f) - routeMidPoints[selectedIndex]
-                            navHost.navigate(routes[selectedIndex])
-                            println(routeStrings[selectedIndex])
+                            scrollOffset = (canvasWidth / 2f) - routeMidPoints[selectedIndex]
+                            val destination = routes[selectedIndex]
+                            if (selectedIndex != selectedRouteIndex) navHost.navigate(destination)
                         },
                         onHorizontalDrag = { change, dragAmount ->
                             change.consume()
-                            val leftOffset = textMeasurer.measure(routeStrings.first(), fontStyling).size.width / 2
-                            val rightOffset = trackLength - textMeasurer.measure(routeStrings.last(), fontStyling).size.width / 2
-                            val midpoint = canvasWidth/2f
+                            val leftOffset = textMeasurer.measure(
+                                routeStrings.first(),
+                                fontStyling
+                            ).size.width / 2
+
+                            val rightOffset = trackLength - textMeasurer.measure(
+                                routeStrings.last(),
+                                fontStyling
+                            ).size.width / 2
+
+                            val midpoint = canvasWidth / 2f
+
                             if (scrollOffset > (midpoint - leftOffset))
                                 scrollOffset = midpoint - leftOffset
                             else if (scrollOffset < midpoint - rightOffset)
@@ -153,14 +161,18 @@ fun HorizontalNavView(
                             else scrollOffset += dragAmount
 
 
-                            selectedIndex = routes.foldIndexed(selectedIndex){ idx, acc, _ ->
+                            selectedIndex = routes.foldIndexed(selectedIndex) { idx, acc, _ ->
                                 val routeCardPosition = scrollOffset + routeMidPoints[idx]
-                                val routeCardDifference = abs(routeCardPosition-canvasWidth/2)
+                                val routeCardDifference = abs(routeCardPosition - canvasWidth / 2)
 
                                 val heldPosition = scrollOffset + routeMidPoints[acc]
-                                val heldCardDifference = abs(heldPosition-canvasWidth/2)
+                                val heldCardDifference = abs(heldPosition - canvasWidth / 2)
 
-                                if (min(routeCardDifference, heldCardDifference) == routeCardDifference) idx else acc
+                                if (min(
+                                        routeCardDifference,
+                                        heldCardDifference
+                                    ) == routeCardDifference
+                                ) idx else acc
                             }
 
                         }
